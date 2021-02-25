@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> 65da8c853e928984d6a4b450effc7f55511337c7
 [02.24.21 07:52:44] Args: {
     "batch_size": 16,
     "do_eval": false,
@@ -21,5 +24,8 @@
     "val_dir": "datasets/indomain_val",
     "visualize_predictions": false
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 65da8c853e928984d6a4b450effc7f55511337c7
 [02.24.21 07:52:44] Preparing Training Data...
