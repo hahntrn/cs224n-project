@@ -50,7 +50,7 @@ def prepare_eval_data(dataset_dict, tokenizer):
 
 
 
-def prepare_train_data(dataset_dict, tokenizer): # pass indomain and oodomain dataset dicts in here
+def prepare_train_data(dataset_dict, tokenizer, augment_dataset=None): # pass indomain and oodomain dataset dicts in here
     tokenized_examples = tokenizer(dataset_dict['question'],
                                    dataset_dict['context'],
                                    truncation="only_second",
@@ -61,6 +61,12 @@ def prepare_train_data(dataset_dict, tokenizer): # pass indomain and oodomain da
                                    padding='max_length')
     sample_mapping = tokenized_examples["overflow_to_sample_mapping"]
     offset_mapping = tokenized_examples["offset_mapping"]
+
+    ### FINETUNE if augment dataset is prodived
+    if augment_dataset is not None:
+        pass
+
+    ### END FINETUNE
 
     # Let's label those examples!
     tokenized_examples["start_positions"] = []
@@ -122,7 +128,7 @@ def prepare_train_data(dataset_dict, tokenizer): # pass indomain and oodomain da
 
 
 
-def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split): # pass in indomain and oodomain dataset dicts
+def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split, augment_dataset_dict=None): # pass in indomain and oodomain dataset dicts
     #TODO: cache this if possible
     cache_path = f'{dir_name}/{dataset_name}_encodings.pt'
     if os.path.exists(cache_path) and not args.recompute_features:
@@ -131,7 +137,7 @@ def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, spli
         if split=='train':
             # if augment flag is true/augment dataset not none:
             # tokenized_examples = prepare_train_data(dataset_dict, augment_dataset_dict, tokenizer)
-            tokenized_examples = prepare_train_data(dataset_dict, tokenizer)
+            tokenized_examples = prepare_train_data(dataset_dict, tokenizer, augment_dataset=augment_dataset)
         else:
             tokenized_examples = prepare_eval_data(dataset_dict, tokenizer)
         util.save_pickle(tokenized_examples, cache_path)
