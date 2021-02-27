@@ -192,6 +192,16 @@ class Trainer():
             return preds, results
         return results
 
+    # def finetuning
+        # should finetune our model
+        # at each training step, sample one example, concatenate them w/ current
+        # example x_in = ("paragraph", "question abt it")
+        # example y_in = ("answer to question")
+        # each train step -- find the top 50% samples in terms of similarity w/ the current x
+        # concatenate them to x
+        # continue training accordingly
+        # answer prompt by filling in answer 
+
     def train(self, model, train_dataloader, eval_dataloader, val_dict):
         device = self.device
         model.to(device)
@@ -205,7 +215,7 @@ class Trainer():
             with torch.enable_grad(), tqdm(total=len(train_dataloader.dataset)) as progress_bar:
                 for batch in train_dataloader:
                     optim.zero_grad()
-                    model.train()
+                    mod el.train()
                     input_ids = batch['input_ids'].to(device)
                     attention_mask = batch['attention_mask'].to(device)
                     start_positions = batch['start_positions'].to(device)
