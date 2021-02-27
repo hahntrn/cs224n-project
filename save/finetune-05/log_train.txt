@@ -1,21 +1,20 @@
-<<<<<<< HEAD
-
-=======
->>>>>>> 65da8c853e928984d6a4b450effc7f55511337c7
-[02.24.21 07:52:44] Args: {
+[02.26.21 18:53:15] Args: {
     "batch_size": 16,
     "do_eval": false,
-    "do_train": true,
+    "do_finetune": true,
+    "do_train": false,
     "eval": false,
     "eval_datasets": "race,relation_extraction,duorc",
     "eval_dir": "datasets/oodomain_test",
     "eval_every": 5000,
+    "finetune_datasets": "race,relation_extraction,duorc",
+    "finetune_dir": "datasets/oodomain_train",
     "lr": 3e-05,
     "num_epochs": 3,
     "num_visuals": 10,
     "recompute_features": false,
-    "run_name": "baseline",
-    "save_dir": "save/baseline-01",
+    "run_name": "finetune",
+    "save_dir": "save/finetune-05",
     "seed": 42,
     "sub_file": "",
     "train": false,
@@ -24,8 +23,4 @@
     "val_dir": "datasets/indomain_val",
     "visualize_predictions": false
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> 65da8c853e928984d6a4b450effc7f55511337c7
-[02.24.21 07:52:44] Preparing Training Data...
+[02.26.21 18:53:15] Preparing Training Data...

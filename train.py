@@ -17,6 +17,9 @@ from args import get_train_test_args
 
 from tqdm import tqdm
 
+from heapq import nlargest, nsmallest
+import random
+
 def prepare_eval_data(dataset_dict, tokenizer):
     tokenized_examples = tokenizer(dataset_dict['question'],
                                    dataset_dict['context'],
@@ -50,7 +53,7 @@ def prepare_eval_data(dataset_dict, tokenizer):
 
 
 
-def prepare_train_data(dataset_dict, tokenizer):
+def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # pass indomain and oodomain dataset dicts in here
     tokenized_examples = tokenizer(dataset_dict['question'],
                                    dataset_dict['context'],
                                    truncation="only_second",
@@ -61,6 +64,35 @@ def prepare_train_data(dataset_dict, tokenizer):
                                    padding='max_length')
     sample_mapping = tokenized_examples["overflow_to_sample_mapping"]
     offset_mapping = tokenized_examples["offset_mapping"]
+
+    ### FINETUNE if augment dataset is prodived
+    # if augment flag is True:
+    # for each context in dataset_dict['context']:
+        # find the top 50% closest contexts from augment_dataset_dict['context']
+        # randomly sample one of these contexts and add it to the original context
+
+    # list of <num_class> lists each containing <num_contexts_in_class> context strings
+    aug_freq_lists = [util.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
+
+    if augment_dataset_dicts is not None:
+
+        # loop over each in-domain context
+        for ind_context in (dataset_dict['context']):
+
+            # for each class of out-of-domain dataset
+            for class_i, augment_dataset_dict in enumerate(augment_dataset_dicts):
+
+                # compute similarity scores for each context in this class
+                sim_scores = []
+                for context_i, aug_context in enumerate(augment_dataset_dict['context']):
+                    sim_scores += util.get_dict_similarity(aug_freq_lists[class_i][context_i], util.get_freq_dict(context))
+
+                # append the a random context in the top 50% most similar to the in-domain example's context
+                num_contexts_in_class = len(augment_dataset_dict['context'])
+                ind_context += random.choice(nlargest(num_contexts_in_class // 2, sim_scores))
+
+
+    ### END FINETUNE
 
     # Let's label those examples!
     tokenized_examples["start_positions"] = []
@@ -118,14 +150,16 @@ def prepare_train_data(dataset_dict, tokenizer):
 
 
 
-def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split):
+def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split, augment_dataset_dicts=None): # pass in indomain and oodomain dataset dicts
     #TODO: cache this if possible
     cache_path = f'{dir_name}/{dataset_name}_encodings.pt'
     if os.path.exists(cache_path) and not args.recompute_features:
         tokenized_examples = util.load_pickle(cache_path)
     else:
         if split=='train':
-            tokenized_examples = prepare_train_data(dataset_dict, tokenizer)
+            # if augment flag is true/augment dataset not none:
+            # tokenized_examples = prepare_train_data(dataset_dict, augment_dataset_dict, tokenizer)
+            tokenized_examples = prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=augment_dataset_dicts)
         else:
             tokenized_examples = prepare_eval_data(dataset_dict, tokenizer)
         util.save_pickle(tokenized_examples, cache_path)
@@ -192,6 +226,71 @@ class Trainer():
             return preds, results
         return results
 
+    # def finetuning
+        # should finetune our model
+        # at each in-domain training step, sample one example from ind, concatenate them w/ current
+        # example x_in = ("paragraph", "question abt it") <---- dont worry abt rn its too hard
+        # example y_in = ("answer to question") <--- same
+        # each train step -- find the top 50% samples in ood terms of similarity w/ the current ind x
+            # for each class:
+                # find top 50% samples in ood term
+                # we can concat 1 random out of the top 50% to x
+            # continue training appropriately
+
+
+        # concatenate them to x
+        # continue training accordingly
+        # answer prompt by filling in answer
+
+    def finetune(self, model, train_dataloader, eval_dataloader, val_dict):
+        device = self.device
+        model.to(device)
+        optim = AdamW(model.parameters(), lr=self.lr)
+        global_idx = 0
+        best_scores = {'F1': -1.0, 'EM': -1.0}
+        tbx = SummaryWriter(self.save_dir)
+
+        for epoch_num in range(self.num_epochs):
+            self.log.info(f'Epoch: {epoch_num}')
+            with torch.enable_grad(), tqdm(total=len(train_dataloader.dataset)) as progress_bar:
+                for batch in train_dataloader:
+                    optim.zero_grad()
+                    model.train()
+                    input_ids = batch['input_ids'].to(device)
+                    attention_mask = batch['attention_mask'].to(device)
+                    start_positions = batch['start_positions'].to(device)
+                    end_positions = batch['end_positions'].to(device)
+                    outputs = model(input_ids, attention_mask=attention_mask,
+                                    start_positions=start_positions,
+                                    end_positions=end_positions)
+                    loss = outputs[0]
+                    loss.backward()
+                    optim.step()
+                    progress_bar.update(len(input_ids))
+                    progress_bar.set_postfix(epoch=epoch_num, NLL=loss.item())
+                    tbx.add_scalar('train/NLL', loss.item(), global_idx)
+                    if (global_idx % self.eval_every) == 0:
+                        self.log.info(f'Evaluating at step {global_idx}...')
+                        preds, curr_score = self.evaluate(model, eval_dataloader, val_dict, return_preds=True)
+                        results_str = ', '.join(f'{k}: {v:05.2f}' for k, v in curr_score.items())
+                        self.log.info('Visualizing in TensorBoard...')
+                        for k, v in curr_score.items():
+                            tbx.add_scalar(f'val/{k}', v, global_idx)
+                        self.log.info(f'Eval {results_str}')
+                        if self.visualize_predictions:
+                            util.visualize(tbx,
+                                           pred_dict=preds,
+                                           gold_dict=val_dict,
+                                           step=global_idx,
+                                           split='val',
+                                           num_visuals=self.num_visuals)
+                        if curr_score['F1'] >= best_scores['F1']:
+                            best_scores = curr_score
+                            self.save(model)
+                    global_idx += 1
+        return best_scores
+
+
     def train(self, model, train_dataloader, eval_dataloader, val_dict):
         device = self.device
         model.to(device)
@@ -240,7 +339,7 @@ class Trainer():
                     global_idx += 1
         return best_scores
 
-def get_dataset(args, datasets, data_dir, tokenizer, split_name):
+def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0, augment_datasets=None, augment_data_dir=None):
     datasets = datasets.split(',')
     dataset_dict = None
     dataset_name=''
@@ -248,7 +347,16 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name):
         dataset_name += f'_{dataset}'
         dataset_dict_curr = util.read_squad(f'{data_dir}/{dataset}')
         dataset_dict = util.merge(dataset_dict, dataset_dict_curr)
-    data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name)
+
+    augment_dataset_dicts = None
+    if augment_datasets is not None:
+        augment_dataset_dicts = []
+        for aug_dataset in augment_datasets.split(','):
+            # dataset_name += f'_{aug_dataset}'
+            augment_dataset_dict_curr = util.read_squad(f'{augment_data_dir}/{aug_dataset}')
+            augment_dataset_dicts += augment_dataset_dict_curr
+
+    data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name, augment_dataset_dicts=augment_dataset_dicts) # pass in both indomain and oodomain dataset dicts
     return util.QADataset(data_encodings, train=(split_name=='train')), dataset_dict
 
 def main():
@@ -268,9 +376,35 @@ def main():
         log.info("Preparing Training Data...")
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
-        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train')
+        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train') # type QADataset
         log.info("Preparing Validation Data...")
         val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
+        train_loader = DataLoader(train_dataset,
+                                batch_size=args.batch_size,
+                                sampler=RandomSampler(train_dataset))
+        (train_loader)
+        val_loader = DataLoader(val_dataset,
+                                batch_size=args.batch_size,
+                                sampler=SequentialSampler(val_dataset))
+        best_scores = trainer.train(model, train_loader, val_loader, val_dict)
+
+    if args.do_finetune:
+        if not os.path.exists(args.save_dir):
+            os.makedirs(args.save_dir)
+        args.save_dir = util.get_save_dir(args.save_dir, args.run_name)
+        log = util.get_logger(args.save_dir, 'log_train')
+        log.info(f'Args: {json.dumps(vars(args), indent=4, sort_keys=True)}')
+        log.info("Preparing Training Data...")
+        args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        trainer = Trainer(args, log)
+
+        # TODO: sample |dev| examples from ood train to augment
+
+        val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
+        # sample len(val_dataset) examples from augment_dataset train
+
+        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', augment_size=len(val_dataset), augment_datasets=args.finetune_datasets, augment_data_dir=args.finetune_dir) # type QADataset
+        log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
                                 sampler=RandomSampler(train_dataset))
@@ -278,6 +412,7 @@ def main():
                                 batch_size=args.batch_size,
                                 sampler=SequentialSampler(val_dataset))
         best_scores = trainer.train(model, train_loader, val_loader, val_dict)
+
     if args.do_eval:
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         split_name = 'test' if 'test' in args.eval_dir else 'validation'

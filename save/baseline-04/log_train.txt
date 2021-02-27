@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-
-=======
->>>>>>> 65da8c853e928984d6a4b450effc7f55511337c7
-[02.24.21 07:52:44] Args: {
+[02.26.21 16:13:23] Args: {
     "batch_size": 16,
     "do_eval": false,
     "do_train": true,
@@ -15,7 +11,7 @@
     "num_visuals": 10,
     "recompute_features": false,
     "run_name": "baseline",
-    "save_dir": "save/baseline-01",
+    "save_dir": "save/baseline-04",
     "seed": 42,
     "sub_file": "",
     "train": false,
@@ -24,8 +20,4 @@
     "val_dir": "datasets/indomain_val",
     "visualize_predictions": false
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> 65da8c853e928984d6a4b450effc7f55511337c7
-[02.24.21 07:52:44] Preparing Training Data...
+[02.26.21 16:13:23] Preparing Training Data...
