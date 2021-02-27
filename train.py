@@ -63,8 +63,16 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset=None): # pass in
     offset_mapping = tokenized_examples["offset_mapping"]
 
     ### FINETUNE if augment dataset is prodived
+    # if augment flag is True:
+    # for each context in dataset_dict['context']:
+        # find the top 50% closest contexts from augment_dataset_dict['context']
+        # randomly sample one of these contexts and add it to the original context
+    
     if augment_dataset is not None:
-        pass
+        ind_context = dataset_dict['context']
+        ood_context = augment_dataset_dict['context']
+        # TODO
+
 
     ### END FINETUNE
 
@@ -73,10 +81,6 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset=None): # pass in
     tokenized_examples["end_positions"] = []
     tokenized_examples['id'] = []
     inaccurate = 0
-    # if augment flag is True:
-    # for each context in dataset_dict['context']:
-        # find the top 50% closest contexts from augment_dataset_dict['context']
-        # randomly sample one of these contexts and add it to the original context
     for i, offsets in enumerate(tqdm(offset_mapping)):
         # We will label impossible answers with the index of the CLS token.
         input_ids = tokenized_examples["input_ids"][i]
