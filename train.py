@@ -205,20 +205,69 @@ class Trainer():
         return results
 
     # def finetuning
-        # should finetune our model
-        # at each in-domain training step, sample one example from ind, concatenate them w/ current
-        # example x_in = ("paragraph", "question abt it") <---- dont worry abt rn its too hard
-        # example y_in = ("answer to question") <--- same
-        # each train step -- find the top 50% samples in ood terms of similarity w/ the current ind x
-            # for each class:
-                # find top 50% samples in ood term
-                # we can concat 1 random out of the top 50% to x
-            # continue training appropriately
+        # should finetune our model
+        # at each in-domain training step, sample one example from ind, concatenate them w/ current
+        # example x_in = ("paragraph", "question abt it") <---- dont worry abt rn its too hard 
+        # example y_in = ("answer to question") <--- same
+        # each train step -- find the top 50% samples in ood terms of similarity w/ the current ind x
+            # for each class:
+                # find top 50% samples in ood term
+                # we can concat 1 random out of the top 50% to x
+            # continue training appropriately
 
 
-        # concatenate them to x
-        # continue training accordingly
-        # answer prompt by filling in answer
+        # concatenate them to x
+        # continue training accordingly
+        # answer prompt by filling in answer 
+
+    def finetune(self, model, train_dataloader, eval_dataloader, val_dict):
+        device = self.device
+        model.to(device)
+        optim = AdamW(model.parameters(), lr=self.lr)
+        global_idx = 0
+        best_scores = {'F1': -1.0, 'EM': -1.0}
+        tbx = SummaryWriter(self.save_dir)
+
+        for epoch_num in range(self.num_epochs):
+            self.log.info(f'Epoch: {epoch_num}')
+            with torch.enable_grad(), tqdm(total=len(train_dataloader.dataset)) as progress_bar:
+                for batch in train_dataloader:
+                    optim.zero_grad()
+                    model.train()
+                    input_ids = batch['input_ids'].to(device)
+                    attention_mask = batch['attention_mask'].to(device)
+                    start_positions = batch['start_positions'].to(device)
+                    end_positions = batch['end_positions'].to(device)
+                    outputs = model(input_ids, attention_mask=attention_mask,
+                                    start_positions=start_positions,
+                                    end_positions=end_positions)
+                    loss = outputs[0]
+                    loss.backward()
+                    optim.step()
+                    progress_bar.update(len(input_ids))
+                    progress_bar.set_postfix(epoch=epoch_num, NLL=loss.item())
+                    tbx.add_scalar('train/NLL', loss.item(), global_idx)
+                    if (global_idx % self.eval_every) == 0:
+                        self.log.info(f'Evaluating at step {global_idx}...')
+                        preds, curr_score = self.evaluate(model, eval_dataloader, val_dict, return_preds=True)
+                        results_str = ', '.join(f'{k}: {v:05.2f}' for k, v in curr_score.items())
+                        self.log.info('Visualizing in TensorBoard...')
+                        for k, v in curr_score.items():
+                            tbx.add_scalar(f'val/{k}', v, global_idx)
+                        self.log.info(f'Eval {results_str}')
+                        if self.visualize_predictions:
+                            util.visualize(tbx,
+                                           pred_dict=preds,
+                                           gold_dict=val_dict,
+                                           step=global_idx,
+                                           split='val',
+                                           num_visuals=self.num_visuals)
+                        if curr_score['F1'] >= best_scores['F1']:
+                            best_scores = curr_score
+                            self.save(model)
+                    global_idx += 1
+        return best_scores
+
 
     def train(self, model, train_dataloader, eval_dataloader, val_dict):
         device = self.device
