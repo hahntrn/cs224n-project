@@ -72,7 +72,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
         # randomly sample one of these contexts and add it to the original context
     
     # list of <num_class> lists each containing <num_contexts_in_class> context strings
-    aug_freq_lists = [utils.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
+    aug_freq_lists = [util.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
 
     if augment_dataset_dicts is not None:
 
@@ -85,7 +85,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
                 # compute similarity scores for each context in this class
                 sim_scores = []
                 for context_i, aug_context in enumerate(augment_dataset_dict['context']):
-                    sim_scores += utils.get_dict_similarity(aug_freq_lists[class_i][context_i], utils.get_freq_dict(context))
+                    sim_scores += util.get_dict_similarity(aug_freq_lists[class_i][context_i], util.get_freq_dict(context))
 
                 # append the a random context in the top 50% most similar to the in-domain example's context
                 num_contexts_in_class = len(augment_dataset_dict['context'])
@@ -339,7 +339,7 @@ class Trainer():
                     global_idx += 1
         return best_scores
 
-def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0, augment_datasets=None):
+def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0, augment_datasets=None, augment_data_dir=None):
     datasets = datasets.split(',')
     dataset_dict = None
     dataset_name=''
@@ -351,9 +351,10 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
     augment_dataset_dicts = None
     if augment_datasets is not None:
         augment_dataset_dicts = []
-        for dataset in augment_datasets:
-            dataset_name += f'_{dataset}'
-            augment_dataset_dict_curr = util.read_squad(f'{data_dir}/{dataset}')
+        for aug_dataset in augment_datasets.split(','):
+            # dataset_name += f'_{aug_dataset}'
+            print('path in get_dataset: ', f'_{aug_dataset}', f'{augment_data_dir}/{aug_dataset}')
+            augment_dataset_dict_curr = util.read_squad(f'{augment_data_dir}/{aug_dataset}')
             augment_dataset_dicts += augment_dataset_dict_curr
 
     data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name, augment_dataset_dicts=augment_dataset_dicts) # pass in both indomain and oodomain dataset dicts
@@ -403,13 +404,13 @@ def main():
         val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         # sample len(val_dataset) examples from augment_dataset train
 
-
-        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', augment=True, augment_datasets=args.finetune_datasets) # type QADataset
+        print('in args', args.train_datasets, args.train_dir) #D
+        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', augment_size=len(val_dataset), augment_datasets=args.finetune_datasets, augment_data_dir=args.finetune_dir) # type QADataset
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
                                 sampler=RandomSampler(train_dataset))
-        print(train_loader)
+        print(train_loader) #D
         val_loader = DataLoader(val_dataset,
                                 batch_size=args.batch_size,
                                 sampler=SequentialSampler(val_dataset))

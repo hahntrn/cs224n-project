@@ -1,0 +1,26 @@
+[02.26.21 18:13:11] Args: {
+    "batch_size": 16,
+    "do_eval": false,
+    "do_finetune": false,
+    "do_train": true,
+    "eval": false,
+    "eval_datasets": "race,relation_extraction,duorc",
+    "eval_dir": "datasets/oodomain_test",
+    "eval_every": 5000,
+    "finetune_datasets": "race,relation_extraction,duorc",
+    "finetune_dir": "datasets/oodomain_train",
+    "lr": 3e-05,
+    "num_epochs": 3,
+    "num_visuals": 10,
+    "recompute_features": false,
+    "run_name": "baseline",
+    "save_dir": "save/baseline-05",
+    "seed": 42,
+    "sub_file": "",
+    "train": false,
+    "train_datasets": "squad,nat_questions,newsqa",
+    "train_dir": "datasets/indomain_train",
+    "val_dir": "datasets/indomain_val",
+    "visualize_predictions": false
+}
+[02.26.21 18:13:11] Preparing Training Data...
