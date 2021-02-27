@@ -89,7 +89,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
 
                 # append the a random context in the top 50% most similar to the in-domain example's context
                 num_contexts_in_class = len(augment_dataset_dict['context'])
-                ind_context += random.choice(nlargest(num_contexts_in_class // 2, sim_scores))
+                ind_context += ' ' + random.choice(nlargest(num_contexts_in_class // 2, sim_scores))
 
 
     ### END FINETUNE
