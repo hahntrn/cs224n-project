@@ -229,7 +229,7 @@ class Trainer():
     # def finetuning
         # should finetune our model
         # at each in-domain training step, sample one example from ind, concatenate them w/ current
-        # example x_in = ("paragraph", "question abt it") <---- dont worry abt rn its too hard
+        # example x_in = ("paragraph", "question abt it") <---- dont worry abt rn its too hard 
         # example y_in = ("answer to question") <--- same
         # each train step -- find the top 50% samples in ood terms of similarity w/ the current ind x
             # for each class:
@@ -240,7 +240,7 @@ class Trainer():
 
         # concatenate them to x
         # continue training accordingly
-        # answer prompt by filling in answer
+        # answer prompt by filling in answer 
 
     def finetune(self, model, train_dataloader, eval_dataloader, val_dict):
         device = self.device

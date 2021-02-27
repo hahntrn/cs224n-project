@@ -466,6 +466,7 @@ def compute_f1(a_gold, a_pred):
     f1 = (2 * precision * recall) / (precision + recall)
     return f1
 
+
 def get_freq_dict(text):
     d = {}
     for word in text.split():
@@ -486,6 +487,7 @@ def get_dict_similarity(d1, d2):
     for word in set(BoW1.keys()).intersection(BoW2.keys()):
         similarity += BoW1[word] * BoW2[word]
     return similarity
+
 
 def compute_similarities(sent1, sent2):
     sent1_freqs = {}
