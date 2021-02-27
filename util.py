@@ -478,14 +478,15 @@ def get_freq_list(dataset):
     return [get_freq_dict(context) for context in dataset['context']]
 
 def get_dict_similarity(d1, d2):
-    BoW1_total = sum([freq for freq in d1.values()])
-    BoW1 = {word : freq / BoW1_total for word, freq in d1.items()}
-    BoW2_total = sum([freq for freq in d2.values()])
-    BoW2 = {word : freq / BoW1_total for word, freq in d2.items()}
+    BoW1_total = sum([freq for freq in sent1_freqs.values()])
+    BoW1 = {word : freq for word, freq in sent1_freqs.items()}
+    BoW2_total = sum([freq for freq in sent2_freqs.values()])
+    BoW2 = {word : freq for word, freq in sent2_freqs.items()}
     similarity = 0
     for word in set(BoW1.keys()).intersection(BoW2.keys()):
-        similarity += BoW1[word] * BoW2[word]
-    return similarity
+        similarity += (BoW1[word] * BoW2[word])
+    cosine = similarity / float((BoW1_total*BoW2_total)**0.5) 
+    return cosine
 
 def compute_similarities(sent1, sent2):
     sent1_freqs = {}
@@ -498,11 +499,15 @@ def compute_similarities(sent1, sent2):
         if word not in sent2_freqs:
             sent2_freqs[word] = 0
         sent2_freqs[word] += 1
+    print(sent1_freqs)
+    print(sent2_freqs)
     BoW1_total = sum([freq for freq in sent1_freqs.values()])
-    BoW1 = {word : freq / BoW1_total for word, freq in sent1_freqs.items()}
+    BoW1 = {word : freq for word, freq in sent1_freqs.items()}
     BoW2_total = sum([freq for freq in sent2_freqs.values()])
-    BoW2 = {word : freq / BoW1_total for word, freq in sent2_freqs.items()}
+    BoW2 = {word : freq for word, freq in sent2_freqs.items()}
     similarity = 0
     for word in set(BoW1.keys()).intersection(BoW2.keys()):
-        similarity += BoW1[word] * BoW2[word]
-    return similarity
+        similarity += (BoW1[word] * BoW2[word])
+    cosine = similarity / float((BoW1_total*BoW2_total)**0.5) 
+    return cosine
+
