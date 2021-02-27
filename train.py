@@ -72,6 +72,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
         # randomly sample one of these contexts and add it to the original context
 
     # list of <num_class> lists each containing <num_contexts_in_class> context strings
+    print('augment_dataset_dicts:', augment_dataset_dicts)#D
     aug_freq_lists = [util.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
 
     if augment_dataset_dicts is not None:
@@ -354,7 +355,9 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
         for aug_dataset in augment_datasets.split(','):
             # dataset_name += f'_{aug_dataset}'
             augment_dataset_dict_curr = util.read_squad(f'{augment_data_dir}/{aug_dataset}')
+            print("augment_dataset_dict_curr in get_dataset", augment_dataset_dict_curr)
             augment_dataset_dicts += augment_dataset_dict_curr
+        print("augment_dataset_dicts in get_dataset", augment_dataset_dicts) #D
 
     data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name, augment_dataset_dicts=augment_dataset_dicts) # pass in both indomain and oodomain dataset dicts
     return util.QADataset(data_encodings, train=(split_name=='train')), dataset_dict
