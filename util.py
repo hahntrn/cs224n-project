@@ -464,3 +464,23 @@ def compute_f1(a_gold, a_pred):
     recall = 1.0 * num_same / len(gold_toks)
     f1 = (2 * precision * recall) / (precision + recall)
     return f1
+
+def compute_similarities(sent1, sent2):
+    sent1_freqs = {}
+    sent2_freqs = {}
+    for word in sent1.split():
+        if word not in sent1_freqs:
+            sent1_freqs[word] = 0
+        sent1_freqs[word] += 1
+    for word in sent2.split():
+        if word not in sent2_freqs:
+            sent2_freqs[word] = 0
+        sent2_freqs[word] += 1
+    BoW1_total = sum([freq for freq in sent1_freqs.values()])
+    BoW1 = {word : freq / BoW1_total for word, freq in sent1_freqs.items()}
+    BoW2_total = sum([freq for freq in sent2_freqs.values()])
+    BoW2 = {word : freq / BoW1_total for word, freq in sent2_freqs.items()}
+    similarity = 0
+    for word in set(BoW1.keys()).intersection(BoW2.keys()):
+        similarity += BoW1[word] * BoW2[word]
+    return similarity
