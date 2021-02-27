@@ -50,7 +50,7 @@ def prepare_eval_data(dataset_dict, tokenizer):
 
 
 
-def prepare_train_data(dataset_dict, tokenizer):
+def prepare_train_data(dataset_dict, tokenizer): # pass indomain and oodomain dataset dicts in here
     tokenized_examples = tokenizer(dataset_dict['question'],
                                    dataset_dict['context'],
                                    truncation="only_second",
@@ -67,6 +67,10 @@ def prepare_train_data(dataset_dict, tokenizer):
     tokenized_examples["end_positions"] = []
     tokenized_examples['id'] = []
     inaccurate = 0
+    # if augment flag is True:
+    # for each context in dataset_dict['context']:
+        # find the top 50% closest contexts from augment_dataset_dict['context']
+        # randomly sample one of these contexts and add it to the original context
     for i, offsets in enumerate(tqdm(offset_mapping)):
         # We will label impossible answers with the index of the CLS token.
         input_ids = tokenized_examples["input_ids"][i]
@@ -118,13 +122,15 @@ def prepare_train_data(dataset_dict, tokenizer):
 
 
 
-def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split):
+def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split): # pass in indomain and oodomain dataset dicts
     #TODO: cache this if possible
     cache_path = f'{dir_name}/{dataset_name}_encodings.pt'
     if os.path.exists(cache_path) and not args.recompute_features:
         tokenized_examples = util.load_pickle(cache_path)
     else:
         if split=='train':
+            # if augment flag is true/augment dataset not none:
+            # tokenized_examples = prepare_train_data(dataset_dict, augment_dataset_dict, tokenizer)
             tokenized_examples = prepare_train_data(dataset_dict, tokenizer)
         else:
             tokenized_examples = prepare_eval_data(dataset_dict, tokenizer)
@@ -193,14 +199,20 @@ class Trainer():
         return results
 
     # def finetuning
-        # should finetune our model
-        # at each training step, sample one example, concatenate them w/ current
-        # example x_in = ("paragraph", "question abt it")
-        # example y_in = ("answer to question")
-        # each train step -- find the top 50% samples in terms of similarity w/ the current x
-        # concatenate them to x
-        # continue training accordingly
-        # answer prompt by filling in answer
+        # should finetune our model
+        # at each in-domain training step, sample one example from ind, concatenate them w/ current
+        # example x_in = ("paragraph", "question abt it") <---- dont worry abt rn its too hard
+        # example y_in = ("answer to question") <--- same
+        # each train step -- find the top 50% samples in ood terms of similarity w/ the current ind x
+            # for each class:
+                # find top 50% samples in ood term
+                # we can concat 1 random out of the top 50% to x
+            # continue training appropriately
+
+
+        # concatenate them to x
+        # continue training accordingly
+        # answer prompt by filling in answer
 
     def train(self, model, train_dataloader, eval_dataloader, val_dict):
         device = self.device
@@ -250,7 +262,7 @@ class Trainer():
                     global_idx += 1
         return best_scores
 
-def get_dataset(args, datasets, data_dir, tokenizer, split_name):
+def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment=False, augment_datasets=None):
     datasets = datasets.split(',')
     dataset_dict = None
     dataset_name=''
@@ -258,7 +270,9 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name):
         dataset_name += f'_{dataset}'
         dataset_dict_curr = util.read_squad(f'{data_dir}/{dataset}')
         dataset_dict = util.merge(dataset_dict, dataset_dict_curr)
-    data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name)
+    # if augment flag is true:
+    #   create a new dataset dict for each of the oodomain datasets as well
+    data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name) # pass in both indomain and oodomain dataset dicts
     return util.QADataset(data_encodings, train=(split_name=='train')), dataset_dict
 
 def main():
