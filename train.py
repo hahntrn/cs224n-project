@@ -70,7 +70,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
     # for each context in dataset_dict['context']:
         # find the top 50% closest contexts from augment_dataset_dict['context']
         # randomly sample one of these contexts and add it to the original context
-    
+
     # list of <num_class> lists each containing <num_contexts_in_class> context strings
     aug_freq_lists = [util.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
 
@@ -81,7 +81,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
 
             # for each class of out-of-domain dataset
             for class_i, augment_dataset_dict in enumerate(augment_dataset_dicts):
-                
+
                 # compute similarity scores for each context in this class
                 sim_scores = []
                 for context_i, aug_context in enumerate(augment_dataset_dict['context']):
@@ -229,7 +229,7 @@ class Trainer():
     # def finetuning
         # should finetune our model
         # at each in-domain training step, sample one example from ind, concatenate them w/ current
-        # example x_in = ("paragraph", "question abt it") <---- dont worry abt rn its too hard 
+        # example x_in = ("paragraph", "question abt it") <---- dont worry abt rn its too hard
         # example y_in = ("answer to question") <--- same
         # each train step -- find the top 50% samples in ood terms of similarity w/ the current ind x
             # for each class:
@@ -240,7 +240,7 @@ class Trainer():
 
         # concatenate them to x
         # continue training accordingly
-        # answer prompt by filling in answer 
+        # answer prompt by filling in answer
 
     def finetune(self, model, train_dataloader, eval_dataloader, val_dict):
         device = self.device
@@ -347,13 +347,12 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
         dataset_name += f'_{dataset}'
         dataset_dict_curr = util.read_squad(f'{data_dir}/{dataset}')
         dataset_dict = util.merge(dataset_dict, dataset_dict_curr)
-    
+
     augment_dataset_dicts = None
     if augment_datasets is not None:
         augment_dataset_dicts = []
         for aug_dataset in augment_datasets.split(','):
             # dataset_name += f'_{aug_dataset}'
-            print('path in get_dataset: ', f'_{aug_dataset}', f'{augment_data_dir}/{aug_dataset}')
             augment_dataset_dict_curr = util.read_squad(f'{augment_data_dir}/{aug_dataset}')
             augment_dataset_dicts += augment_dataset_dict_curr
 
@@ -383,12 +382,12 @@ def main():
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
                                 sampler=RandomSampler(train_dataset))
-        print(train_loader)
+        (train_loader)
         val_loader = DataLoader(val_dataset,
                                 batch_size=args.batch_size,
                                 sampler=SequentialSampler(val_dataset))
         best_scores = trainer.train(model, train_loader, val_loader, val_dict)
-    
+
     if args.do_finetune:
         if not os.path.exists(args.save_dir):
             os.makedirs(args.save_dir)
@@ -404,13 +403,11 @@ def main():
         val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         # sample len(val_dataset) examples from augment_dataset train
 
-        print('in args', args.train_datasets, args.train_dir) #D
         train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', augment_size=len(val_dataset), augment_datasets=args.finetune_datasets, augment_data_dir=args.finetune_dir) # type QADataset
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
                                 sampler=RandomSampler(train_dataset))
-        print(train_loader) #D
         val_loader = DataLoader(val_dataset,
                                 batch_size=args.batch_size,
                                 sampler=SequentialSampler(val_dataset))
