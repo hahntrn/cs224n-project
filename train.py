@@ -17,6 +17,9 @@ from args import get_train_test_args
 
 from tqdm import tqdm
 
+from heapq import nlargest, nsmallest
+import random
+
 def prepare_eval_data(dataset_dict, tokenizer):
     tokenized_examples = tokenizer(dataset_dict['question'],
                                    dataset_dict['context'],
@@ -50,7 +53,7 @@ def prepare_eval_data(dataset_dict, tokenizer):
 
 
 
-def prepare_train_data(dataset_dict, tokenizer, augment_dataset=None): # pass indomain and oodomain dataset dicts in here
+def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # pass indomain and oodomain dataset dicts in here
     tokenized_examples = tokenizer(dataset_dict['question'],
                                    dataset_dict['context'],
                                    truncation="only_second",
@@ -68,10 +71,25 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset=None): # pass in
         # find the top 50% closest contexts from augment_dataset_dict['context']
         # randomly sample one of these contexts and add it to the original context
     
-    if augment_dataset is not None:
-        ind_context = dataset_dict['context']
-        ood_context = augment_dataset_dict['context']
-        # TODO
+    # list of <num_class> lists each containing <num_contexts_in_class> context strings
+    aug_freq_lists = [utils.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
+
+    if augment_dataset_dicts is not None:
+
+        # loop over each in-domain context
+        for ind_context in (dataset_dict['context']):
+
+            # for each class of out-of-domain dataset
+            for class_i, augment_dataset_dict in enumerate(augment_dataset_dicts):
+                
+                # compute similarity scores for each context in this class
+                sim_scores = []
+                for context_i, aug_context in enumerate(augment_dataset_dict['context']):
+                    sim_scores += utils.get_dict_similarity(aug_freq_lists[class_i][context_i], utils.get_freq_dict(context))
+
+                # append the a random context in the top 50% most similar to the in-domain example's context
+                num_contexts_in_class = len(augment_dataset_dict['context'])
+                ind_context += random.choice(nlargest(num_contexts_in_class // 2, sim_scores))
 
 
     ### END FINETUNE
@@ -132,7 +150,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset=None): # pass in
 
 
 
-def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split, augment_dataset_dict=None): # pass in indomain and oodomain dataset dicts
+def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split, augment_dataset_dicts=None): # pass in indomain and oodomain dataset dicts
     #TODO: cache this if possible
     cache_path = f'{dir_name}/{dataset_name}_encodings.pt'
     if os.path.exists(cache_path) and not args.recompute_features:
@@ -141,7 +159,7 @@ def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, spli
         if split=='train':
             # if augment flag is true/augment dataset not none:
             # tokenized_examples = prepare_train_data(dataset_dict, augment_dataset_dict, tokenizer)
-            tokenized_examples = prepare_train_data(dataset_dict, tokenizer, augment_dataset=augment_dataset)
+            tokenized_examples = prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=augment_dataset_dicts)
         else:
             tokenized_examples = prepare_eval_data(dataset_dict, tokenizer)
         util.save_pickle(tokenized_examples, cache_path)
@@ -321,7 +339,7 @@ class Trainer():
                     global_idx += 1
         return best_scores
 
-def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment=False, augment_datasets=None):
+def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0, augment_datasets=None):
     datasets = datasets.split(',')
     dataset_dict = None
     dataset_name=''
@@ -329,12 +347,16 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment=False, 
         dataset_name += f'_{dataset}'
         dataset_dict_curr = util.read_squad(f'{data_dir}/{dataset}')
         dataset_dict = util.merge(dataset_dict, dataset_dict_curr)
-    if augment:
+    
+    augment_dataset_dicts = None
+    if augment_datasets is not None:
+        augment_dataset_dicts = []
         for dataset in augment_datasets:
             dataset_name += f'_{dataset}'
             augment_dataset_dict_curr = util.read_squad(f'{data_dir}/{dataset}')
-            augment_dataset_dict = util.merge(augment_dataset_dict, augment_dataset_dict_curr)
-    data_encodings = read_and_process(args, tokenizer, dataset_dict, augment_dataset_dict=augment_dataset_dict, data_dir, dataset_name, split_name) # pass in both indomain and oodomain dataset dicts
+            augment_dataset_dicts += augment_dataset_dict_curr
+
+    data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name, augment_dataset_dicts=augment_dataset_dicts) # pass in both indomain and oodomain dataset dicts
     return util.QADataset(data_encodings, train=(split_name=='train')), dataset_dict
 
 def main():
@@ -365,6 +387,7 @@ def main():
                                 batch_size=args.batch_size,
                                 sampler=SequentialSampler(val_dataset))
         best_scores = trainer.train(model, train_loader, val_loader, val_dict)
+    
     if args.do_finetune:
         if not os.path.exists(args.save_dir):
             os.makedirs(args.save_dir)
@@ -374,9 +397,15 @@ def main():
         log.info("Preparing Training Data...")
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
+
+        # TODO: sample |dev| examples from ood train to augment
+
+        val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
+        # sample len(val_dataset) examples from augment_dataset train
+
+
         train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', augment=True, augment_datasets=args.finetune_datasets) # type QADataset
         log.info("Preparing Validation Data...")
-        val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
                                 sampler=RandomSampler(train_dataset))
@@ -385,6 +414,7 @@ def main():
                                 batch_size=args.batch_size,
                                 sampler=SequentialSampler(val_dataset))
         best_scores = trainer.train(model, train_loader, val_loader, val_dict)
+
     if args.do_eval:
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         split_name = 'test' if 'test' in args.eval_dir else 'validation'
