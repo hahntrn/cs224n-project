@@ -73,7 +73,16 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
 
     # list of <num_class> lists each containing <num_contexts_in_class> context strings
     print('augment_dataset_dicts:', augment_dataset_dicts)#D
+    # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
+    # aug_classes = []
+    # for augment_dataset_dict in augment_dataset_dicts:
+    #     aug_freqs = []
+    #     for aug_context in augment_dataset_dict['context']:
+    #         aug_freqs.append(util.get_fr
+
+    # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
     aug_freq_lists = [util.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
+    print('!!! aug_freq_lists in prepare train data', aug_freq_lists)
 
     if augment_dataset_dicts is not None:
 
@@ -82,11 +91,14 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
 
             # for each class of out-of-domain dataset
             for class_i, augment_dataset_dict in enumerate(augment_dataset_dicts):
+                # print('aument_dataset_dict', augment_dataset_dict)
 
                 # compute similarity scores for each context in this class
                 sim_scores = []
                 for context_i, aug_context in enumerate(augment_dataset_dict['context']):
-                    sim_scores += util.get_dict_similarity(aug_freq_lists[class_i][context_i], util.get_freq_dict(context))
+                    # print('in prepare train data.', aug_freq_lists[class_i])
+                    sim_scores += util.get_dict_similarity(aug_freq_lists[class_i][context_i], util.get_freq_dict(aug_context))
+
 
                 # append the a random context in the top 50% most similar to the in-domain example's context
                 num_contexts_in_class = len(augment_dataset_dict['context'])
@@ -355,8 +367,8 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
         for aug_dataset in augment_datasets.split(','):
             # dataset_name += f'_{aug_dataset}'
             augment_dataset_dict_curr = util.read_squad(f'{augment_data_dir}/{aug_dataset}')
-            print("augment_dataset_dict_curr in get_dataset", augment_dataset_dict_curr)
-            augment_dataset_dicts += augment_dataset_dict_curr
+            print("augment_dataset_dict_curr in ", augment_dataset_dict_curr)
+            augment_dataset_dicts += [augment_dataset_dict_curr]
         print("augment_dataset_dicts in get_dataset", augment_dataset_dicts) #D
 
     data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name, augment_dataset_dicts=augment_dataset_dicts) # pass in both indomain and oodomain dataset dicts
