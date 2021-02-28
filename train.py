@@ -71,47 +71,40 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
         # find the top 50% closest contexts from augment_dataset_dict['context']
         # randomly sample one of these contexts and add it to the original context
 
+    # list of <num_class> lists each containing <num_contexts_in_class> context strings
+    print('augment_dataset_dicts:', augment_dataset_dicts)#D
+    # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
+    # aug_classes = []
+    # for augment_dataset_dict in augment_dataset_dicts:
+    #     aug_freqs = []
+    #     for aug_context in augment_dataset_dict['context']:
+    #         aug_freqs.append(util.get_fr
+
+    # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
+    aug_freq_lists = [util.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
+    print('!!! aug_freq_lists in prepare train data', aug_freq_lists)
+
     if augment_dataset_dicts is not None:
-        print("Augmenting contexts in prepare_training_data")
-        # list of <num_class> lists each containing <num_contexts_in_class> context strings
-        # print('augment_dataset_dicts:', augment_dataset_dicts)#D
-        # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
-        # aug_classes = []
-        # for augment_dataset_dict in augment_dataset_dicts:
-        #     aug_freqs = []
-        #     for aug_context in augment_dataset_dict['context']:
-        #         aug_freqs.append(util.get_fr
-
-        # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
-        aug_freq_lists = [util.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
-        # print('!!! aug_freq_lists in prepare train data', aug_freq_lists)
-        # print('1###', aug_freq_lists[0][0])
-
 
         # loop over each in-domain context
-        for context_i, ind_context in enumerate(dataset_dict['context']):
+        for ind_context in (dataset_dict['context']):
 
-            # print('2###', aug_freq_lists[0][0])
             # for each class of out-of-domain dataset
             for class_i, augment_dataset_dict in enumerate(augment_dataset_dicts):
                 # print('aument_dataset_dict', augment_dataset_dict)
 
                 # compute similarity scores for each context in this class
                 sim_scores = []
-                # print('3###', aug_freq_lists[0][0])
-                for aug_context_i, aug_context in enumerate(augment_dataset_dict['context']):
+                for context_i, aug_context in enumerate(augment_dataset_dict['context']):
                     # print('in prepare train data.', aug_freq_lists[class_i])
-                    sim_scores.append((util.get_dict_similarity(aug_freq_lists[class_i][aug_context_i], util.get_freq_dict(aug_context)),aug_context_i))
+                    sim_scores += util.get_dict_similarity(aug_freq_lists[class_i][context_i], util.get_freq_dict(aug_context))
 
 
                 # append the a random context in the top 50% most similar to the in-domain example's context
                 num_contexts_in_class = len(augment_dataset_dict['context'])
-                choice_i = random.randint(0, num_contexts_in_class // 2 - 1) # range inclusive
-                choices = nlargest(num_contexts_in_class // 2, sim_scores)
-                chosen_aug_context_score, chosen_aug_context_i = choices[choice_i]
-                # print('choices', choice_i, chosen_aug_context_i, choices)
-                dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + augment_dataset_dict['context'][chosen_aug_context_i]
-        print("Done augmenting contexts!")
+                ind_context += ' ' + random.choice(nlargest(num_contexts_in_class // 2, sim_scores))
+
+
     ### END FINETUNE
 
     # Let's label those examples!
@@ -374,9 +367,13 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
         for aug_dataset in augment_datasets.split(','):
             # dataset_name += f'_{aug_dataset}'
             augment_dataset_dict_curr = util.read_squad(f'{augment_data_dir}/{aug_dataset}')
-            # print("augment_dataset_dict_curr in ", augment_dataset_dict_curr)
-            augment_dataset_dicts += [augment_dataset_dict_curr]
-        # print("augment_dataset_dicts in get_dataset", augment_dataset_dicts) #D
+            print("augment_dataset_dict_curr in ", augment_dataset_dict_curr)
+            augment_sample_keys = random.sample(augment_dataset_dict.item(), augment_size // 3)
+            updated_dict = {}
+            for key in augment_sample_keys:
+                updated_dict[key] = augment_dataset_dict[key]
+            augment_dataset_dicts += [updated_dict]
+        print("augment_dataset_dicts in get_dataset", augment_dataset_dicts) #
 
     data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name, augment_dataset_dicts=augment_dataset_dicts) # pass in both indomain and oodomain dataset dicts
     return util.QADataset(data_encodings, train=(split_name=='train')), dataset_dict
@@ -420,7 +417,9 @@ def main():
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
 
-        # TODO: sample |dev| examples from ood train to augment
+        # TODO: sample |dev| examples from ood train to augment sammy mohammed
+        
+        
 
         val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         # sample len(val_dataset) examples from augment_dataset train
