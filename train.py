@@ -368,6 +368,8 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
             # dataset_name += f'_{aug_dataset}'
             augment_dataset_dict_curr = util.read_squad(f'{augment_data_dir}/{aug_dataset}')
             print("augment_dataset_dict_curr in ", augment_dataset_dict_curr)
+            print(augment_size // 3)
+            print(len(augment_dataset_dict_curr.keys()))
             augment_sample_keys = random.sample(augment_dataset_dict_curr.items(), augment_size // 3)
             updated_dict = {}
             for key in augment_sample_keys:
