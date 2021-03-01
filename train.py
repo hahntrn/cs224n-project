@@ -447,6 +447,11 @@ def main():
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
 
+        # load saved model tuned on in-domain train set
+        checkpoint_path = os.path.join(args.load_dir, 'checkpoint')
+        model = DistilBertForQuestionAnswering.from_pretrained(checkpoint_path)
+        model.to(args.device)
+
         # TODO: sample |dev| examples from ood train to augment
         # sample |dev examples from augment_dataset train
         # try run train indomain with --val-dir datasets/oodomain_val to use oodomain tune??
@@ -461,11 +466,6 @@ def main():
         val_loader = DataLoader(val_dataset,
                                 batch_size=args.batch_size,
                                 sampler=SequentialSampler(val_dataset))
-
-        # load saved model tuned on in-domain train set
-        checkpoint_path = os.path.join(args.save_dir, 'checkpoint')
-        model = DistilBertForQuestionAnswering.from_pretrained(checkpoint_path)
-        model.to(args.device)
 
         best_scores = trainer.train(model, train_loader, val_loader, val_dict)
 
