@@ -114,7 +114,6 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
                     word_to_mask = random.choice(selected_context.split(" "))
                     selected_context = selected_context.replace(word_to_mask, "[MASK]")
                 dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + selected_context
-                print(dataset_dict['context'][context_i])
         print("Done augmenting contexts!")
     ### END FINETUNE
 
