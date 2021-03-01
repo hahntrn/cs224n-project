@@ -370,11 +370,12 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
             print("augment_dataset_dict_curr in ", augment_dataset_dict_curr)
             print(augment_size // 3)
             print(len(augment_dataset_dict_curr.keys()))
-            augment_sample_keys = random.sample(augment_dataset_dict_curr.items(), augment_size // 3)
+            augment_sample_keys = random.sample(augment_dataset_dict_curr.items(), min(len(augment_dataset_dict_curr.keys()), augment_size // 3))
+            print(augment_sample_keys)
             updated_dict = {}
-            for key in augment_sample_keys:
-                updated_dict[key] = augment_dataset_dict_curr[key]
-            augment_dataset_dicts += [updated_dict]
+            # for key in augment_sample_keys:
+            #     updated_dict[key] = augment_dataset_dict_curr[key]
+            augment_dataset_dicts += [augment_sample_keys]
         print("augment_dataset_dicts in get_dataset", augment_dataset_dicts) #
 
     data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name, augment_dataset_dicts=augment_dataset_dicts) # pass in both indomain and oodomain dataset dicts
