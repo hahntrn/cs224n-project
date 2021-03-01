@@ -89,8 +89,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
 
 
         # loop over each in-domain context
-        for context_i, ind_context in enumerate(dataset_dict['context']):
-
+        for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
             # print('2###', aug_freq_lists[0][0])
             # for each class of out-of-domain dataset
             for class_i, augment_dataset_dict in enumerate(augment_dataset_dicts):
