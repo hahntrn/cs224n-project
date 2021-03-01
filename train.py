@@ -445,6 +445,11 @@ def main():
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
 
+        # load saved model tuned on in-domain train set
+        checkpoint_path = os.path.join(args.load_dir, 'checkpoint')
+        model = DistilBertForQuestionAnswering.from_pretrained(checkpoint_path)
+        model.to(args.device)
+
         # TODO: sample |dev| examples from ood train to augment
 
         val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
@@ -460,11 +465,7 @@ def main():
                                 batch_size=args.batch_size,
                                 sampler=SequentialSampler(val_dataset))
 
-        # load saved model tuned on in-domain train set
-        checkpoint_path = os.path.join(args.save_dir, 'checkpoint')
-        model = DistilBertForQuestionAnswering.from_pretrained(checkpoint_path)
-        model.to(args.device)
-        
+
         best_scores = trainer.train(model, train_loader, val_loader, val_dict)
 
     if args.do_augment_ood:
@@ -480,7 +481,7 @@ def main():
 
         # TODO: sample |dev| examples from ood train to augment
         # sample |dev examples from augment_dataset train
-        # try run train indomain with --val-dir datasets/oodomain_val to use oodomain tune?? 
+        # try run train indomain with --val-dir datasets/oodomain_val to use oodomain tune??
         # which val sets do we need to keep pristine and which can we use for metalearing/training hyperpameters?
         val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
 
