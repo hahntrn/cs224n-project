@@ -73,6 +73,11 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
 
     if augment_dataset_dicts is not None:
         print("Augmenting contexts in prepare_training_data")
+        for ood_set in augment_dataset_dicts:
+            # limit the size of the datasets
+            ood_set[context] = dict(random.sample(ood_set[context], min(augment_size, len(ood_set[context]))))
+        # loop over each in-domain context
+        for ind_context in (dataset_dict['context']):
         # list of <num_class> lists each containing <num_contexts_in_class> context strings
         # print('augment_dataset_dicts:', augment_dataset_dicts)#D
         # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
@@ -110,6 +115,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
                 chosen_aug_context_score, chosen_aug_context_i = choices[choice_i]
                 # print('choices', choice_i, chosen_aug_context_i, choices)
                 dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + augment_dataset_dict['context'][chosen_aug_context_i]
+                print(dataset_dict['context'][context_i])
         print("Done augmenting contexts!")
     ### END FINETUNE
 
