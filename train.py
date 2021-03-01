@@ -451,7 +451,7 @@ def main():
         # sample |dev examples from augment_dataset train
         # try run train indomain with --val-dir datasets/oodomain_val to use oodomain tune?? 
         # which val sets do we need to keep pristine and which can we use for metalearing/training hyperpameters?
-        val_dataset, val_dict = get_dataset(args, args.finetune_datasets, args.val_dir, tokenizer, 'val')
+        val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
 
         train_dataset, _ = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'train', augment_datasets=args.train_datasets, augment_data_dir=args.train_dir) # type QADataset
         log.info("Preparing Validation Data...")
