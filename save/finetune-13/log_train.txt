@@ -1,4 +1,4 @@
-[02.27.21 14:42:33] Args: {
+[02.27.21 22:34:59] Args: {
     "batch_size": 16,
     "do_eval": false,
     "do_finetune": true,
@@ -12,7 +12,7 @@
     "lr": 3e-05,
     "num_epochs": 3,
     "num_visuals": 10,
-    "recompute_features": false,
+    "recompute_features": true,
     "run_name": "finetune",
     "save_dir": "save/finetune-13",
     "seed": 42,
@@ -23,7 +23,5 @@
     "val_dir": "datasets/indomain_val",
     "visualize_predictions": false
 }
-[02.27.21 14:42:33] Preparing Training Data...
-[02.27.21 14:44:22] Preparing Validation Data...
-[02.27.21 14:44:22] Epoch: 0
-[02.27.21 14:44:46] Evaluating at step 0...
+
+[02.27.21 22:34:59] Preparing Training Data...
