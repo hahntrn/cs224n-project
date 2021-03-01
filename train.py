@@ -109,7 +109,12 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
                 choices = nlargest(num_contexts_in_class // 2, sim_scores)
                 chosen_aug_context_score, chosen_aug_context_i = choices[choice_i]
                 # print('choices', choice_i, chosen_aug_context_i, choices)
-                dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + augment_dataset_dict['context'][chosen_aug_context_i]
+                selected_context = augment_dataset_dict['context'][chosen_aug_context_i]
+                for i in range(2):
+                    word_to_mask = random.choice(selected_context.split(" "))
+                    selected_context = selected_context.replace(word_to_mask, "[MASK]")
+                dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + selected_context
+                print(dataset_dict['context'][context_i])
         print("Done augmenting contexts!")
     ### END FINETUNE
 
@@ -387,7 +392,9 @@ def main():
     util.set_seed(args.seed)
     model = DistilBertForQuestionAnswering.from_pretrained("distilbert-base-uncased")
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
-
+    special_tokens_dict = {'additional_special_tokens': ['[MASK]']}
+    num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
+    model.resize_token_embeddings(len(tokenizer))
     if args.do_train:
         if not os.path.exists(args.save_dir):
             os.makedirs(args.save_dir)
@@ -421,7 +428,7 @@ def main():
 
         # TODO: sample |dev| examples from ood train to augment
 
-        val_dataset, val_dict = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'val') # use ood train as validation set
+        val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val') 
         # val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         # sample len(val_dataset) examples from augment_dataset train
 
