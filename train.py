@@ -115,7 +115,6 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
                 chosen_aug_context_score, chosen_aug_context_i = choices[choice_i]
                 # print('choices', choice_i, chosen_aug_context_i, choices)
                 dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + augment_dataset_dict['context'][chosen_aug_context_i]
-                print(dataset_dict['context'][context_i])
         print("Done augmenting contexts!")
     ### END FINETUNE
 
