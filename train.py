@@ -373,13 +373,9 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
         for aug_dataset in augment_datasets.split(','):
             # dataset_name += f'_{aug_dataset}'
             augment_dataset_dict_curr = util.read_squad(f'{augment_data_dir}/{aug_dataset}')
-            print("augment_dataset_dict_curr in ", augment_dataset_dict_curr)
-            augment_sample_keys = random.sample(augment_dataset_dict.item(), augment_size // 3)
-            updated_dict = {}
-            for key in augment_sample_keys:
-                updated_dict[key] = augment_dataset_dict[key]
-            augment_dataset_dicts += [updated_dict]
-        print("augment_dataset_dicts in get_dataset", augment_dataset_dicts) #
+            # print("augment_dataset_dict_curr in ", augment_dataset_dict_curr)
+            augment_dataset_dicts += [augment_dataset_dict_curr]
+        # print("augment_dataset_dicts in get_dataset", augment_dataset_dicts) #D
 
     data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name, augment_dataset_dicts=augment_dataset_dicts) # pass in both indomain and oodomain dataset dicts
     return util.QADataset(data_encodings, train=(split_name=='train')), dataset_dict
@@ -423,9 +419,7 @@ def main():
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
 
-        # TODO: sample |dev| examples from ood train to augment sammy mohammed
-        
-        
+        # TODO: sample |dev| examples from ood train to augment
 
         val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         # sample len(val_dataset) examples from augment_dataset train
