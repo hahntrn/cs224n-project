@@ -449,7 +449,7 @@ def main():
 
         # TODO: sample |dev| examples from ood train to augment
         # sample |dev examples from augment_dataset train
-        # try run train indomain with --val-dir datasets/oodomain_val to use oodomain tune?? 
+        # try run train indomain with --val-dir datasets/oodomain_val to use oodomain tune??
         # which val sets do we need to keep pristine and which can we use for metalearing/training hyperpameters?
         val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
 
