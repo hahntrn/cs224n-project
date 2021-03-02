@@ -385,9 +385,10 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
 def main():
     # define parser and arguments
     args = get_train_test_args()
-
     util.set_seed(args.seed)
-    model = DistilBertForQuestionAnswering.from_pretrained("distilbert-base-uncased")
+    
+    pretrained = args.load_dir if args.load_checkpoint else "distilbert-base-uncased" 
+    model = DistilBertForQuestionAnswering.from_pretrained(pretrained)
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
     sent_model = SentenceTransformer('distilbert-base-uncased')
 
