@@ -442,7 +442,7 @@ def main():
                                 sampler=SequentialSampler(val_dataset))
         best_scores = trainer.train(model, train_loader, val_loader, val_dict)
 
-    if args.do_finetune_from_checkpoint:
+    if args.do_finetune_load_checkpoint:
         if not os.path.exists(args.save_dir):
             os.makedirs(args.save_dir)
         args.save_dir = util.get_save_dir(args.save_dir, args.run_name)
