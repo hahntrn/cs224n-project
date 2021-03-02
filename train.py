@@ -9,7 +9,7 @@ from transformers import DistilBertTokenizerFast
 from transformers import DistilBertForQuestionAnswering
 from transformers import AdamW
 from tensorboardX import SummaryWriter
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer # pip3 install -U sentence-transformers
 
 
 from torch.utils.data import DataLoader
@@ -74,9 +74,30 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
         # randomly sample one of these contexts and add it to the original context
 
     if augment_dataset_dicts is not None:
-        print("Augmenting contexts in prepare_training_data")
+        print("Augmenting contexts in prepare_training_data...")
 
         if sent_model is not None:
+            print("Calculating sentence embedding and cosine similarities...")
+            sent_embedding =        sent_model.encode(dataset_dict['context'], convert_to_tensor=True)
+            aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True) 
+                                for aug_dict in augment_dataset_dicts]
+            
+            cosine_sim_classes = [sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_emb)
+                                for aug_emb in aug_embeddings_classes]
+            print("sent_embedding",sent_embedding) #D
+            print("aug_embeddings_classes",aug_embeddings_classes)#D
+            print("cosine_sim_classes",cosine_sim_classes)#D
+
+            print("Appending demonstrations...")
+            for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
+                # for each class of out-of-domain dataset
+                best_demonstrations = [
+                            augment_dataset_dict['context'][
+                                torch.argmax(cosine_sim_classes[class_i][context_i])]
+                            for class_i in len(augment_dataset_dicts)]
+                print("best_demonstrations",best_demonstrations)#D
+
+                dataset_dict['context'][context_i] += ' ' + ' '.join(best_demonstrations)
 
         else:
             # list of <num_class> lists each containing <num_contexts_in_class> context strings
@@ -90,20 +111,20 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
 
             # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
             aug_freq_lists = [util.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
-            # print('!!! aug_freq_lists in prepare train data', aug_freq_lists)
-            # print('1###', aug_freq_lists[0][0])
+            # print('!!! aug_freq_lists in prepare train data', aug_freq_lists)#D
+            # print('1###', aug_freq_lists[0][0])#D
 
 
             # loop over each in-domain context
             for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
-                # print('2###', aug_freq_lists[0][0])
+                # print('2###', aug_freq_lists[0][0])#D
                 # for each class of out-of-domain dataset
                 for class_i, augment_dataset_dict in enumerate(augment_dataset_dicts):
-                    # print('aument_dataset_dict', augment_dataset_dict)
+                    # print('aument_dataset_dict', augment_dataset_dict)#D
 
                     # compute similarity scores for each context in this class
                     sim_scores = []
-                    # print('3###', aug_freq_lists[0][0])
+                    # print('3###', aug_freq_lists[0][0])#D
                     for aug_context_i, aug_context in enumerate(augment_dataset_dict['context']):
                         # print('in prepare train data.', aug_freq_lists[class_i])
                         sim_scores.append((util.get_dict_similarity(aug_freq_lists[class_i][aug_context_i], util.get_freq_dict(aug_context)),aug_context_i))
@@ -114,7 +135,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
                     choice_i = random.randint(0, num_contexts_in_class // 2 - 1) # range inclusive
                     choices = nlargest(num_contexts_in_class // 2, sim_scores)
                     chosen_aug_context_score, chosen_aug_context_i = choices[choice_i]
-                    # print('choices', choice_i, chosen_aug_context_i, choices)
+                    # print('choices', choice_i, chosen_aug_context_i, choices)#D
                     dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + augment_dataset_dict['context'][chosen_aug_context_i]
 
         print("Done augmenting contexts!")
@@ -400,6 +421,7 @@ def main():
     
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
     sent_model = SentenceTransformer('distilbert-base-uncased')
+    
     if args.do_train:
         if not os.path.exists(args.save_dir):
             os.makedirs(args.save_dir)
