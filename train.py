@@ -391,7 +391,7 @@ def main():
     util.set_seed(args.seed)
     model = DistilBertForQuestionAnswering.from_pretrained("distilbert-base-uncased")
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
-    special_tokens_dict = {'additional_special_tokens': ['[MASK]']}
+    special_tokens_dict = {'additional_special_tokens': ['[MASK]']} # tokenizer.mask_token and mask_token_id? see .cls_token
     num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
     model.resize_token_embeddings(len(tokenizer))
     if args.do_train:
