@@ -510,3 +510,14 @@ def compute_similarities(sent1, sent2):
     cosine = similarity / float((BoW1_total*BoW2_total)**0.5) 
     return cosine
 
+def get_sts(context, s2):
+    model = SentenceTransformer('distilbert-base-uncased')
+    embeddings1 = model.encode(sentences1, convert_to_tensor=True)
+    embeddings2 = model.encode(sentences2, convert_to_tensor=True)
+
+    #Compute cosine-similarits
+    cosine_scores = util.pytorch_cos_sim(embeddings1, embeddings2)
+
+    #Output the pairs with their score
+    for i in range(len(sentences1)):
+        print("{} \t\t {} \t\t Score: {:.4f}".format(sentences1[i], sentences2[i], cosine_scores[i][i]))
