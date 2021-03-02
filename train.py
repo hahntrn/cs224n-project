@@ -80,10 +80,10 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
             print("Calculating sentence embedding and cosine similarities...")
             sent_embedding =        sent_model.encode(dataset_dict['context'], convert_to_tensor=True)
             aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True) 
-                                for aug_dict in augment_dataset_dicts]
+                                    for aug_dict in augment_dataset_dicts]
             
             cosine_sim_classes = [sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_emb)
-                                for aug_emb in aug_embeddings_classes]
+                                    for aug_emb in aug_embeddings_classes]
             print("sent_embedding",sent_embedding) #D
             print("aug_embeddings_classes",aug_embeddings_classes)#D
             print("cosine_sim_classes",cosine_sim_classes)#D
@@ -92,11 +92,11 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
             for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
                 # for each class of out-of-domain dataset
                 best_demonstrations = [
-                            augment_dataset_dict['context'][
-                                torch.argmax(cosine_sim_classes[class_i][context_i])]
-                            for class_i in len(augment_dataset_dicts)]
-                print("best_demonstrations",best_demonstrations)#D
+                                augment_dataset_dict['context'][
+                                    torch.argmax(cosine_sim_classes[class_i][context_i])]
+                                for class_i in len(augment_dataset_dicts)]
 
+                print("best_demonstrations",best_demonstrations)#D
                 dataset_dict['context'][context_i] += ' ' + ' '.join(best_demonstrations)
 
         else:
@@ -197,7 +197,8 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
 
 
 
-def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split, augment_dataset_dicts=None, sent_model=None): # pass in indomain and oodomain dataset dicts
+# pass in indomain and oodomain dataset dicts
+def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split, augment_dataset_dicts=None, sent_model=None): 
     #TODO: cache this if possible
     cache_path = f'{dir_name}/{dataset_name}_encodings.pt'
     if os.path.exists(cache_path) and not args.recompute_features:
@@ -405,7 +406,9 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
             augment_dataset_dicts += [augment_dataset_dict_curr]
         # print("augment_dataset_dicts in get_dataset", augment_dataset_dicts) #D
 
-    data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name, augment_dataset_dicts=augment_dataset_dicts, sent_model=sent_model) # pass in both indomain and oodomain dataset dicts
+    data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name, 
+                            augment_dataset_dicts=augment_dataset_dicts, 
+                            sent_model=sent_model) # pass in both indomain and oodomain dataset dicts
     return util.QADataset(data_encodings, train=(split_name=='train')), dataset_dict
 
 def main():
@@ -460,7 +463,12 @@ def main():
         # sample len(val_dataset) examples from augment_dataset train
 
         # TODO augment size wrong and unused?
-        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', augment_size=len(val_dataset), augment_datasets=args.finetune_datasets, augment_data_dir=args.finetune_dir) # type QADataset
+        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', 
+                                augment_size=len(val_dataset), 
+                                augment_datasets=args.finetune_datasets, 
+                                augment_data_dir=args.finetune_dir
+                                sent_model=None) # type QADataset
+
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
@@ -491,7 +499,11 @@ def main():
         # sample len(val_dataset) examples from augment_dataset train
 
         # TODO augment size wrong and unused?
-        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', augment_size=len(val_dataset), augment_datasets=args.finetune_datasets, augment_data_dir=args.finetune_dir) # type QADataset
+        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', 
+                                augment_datasets=args.finetune_datasets, 
+                                augment_data_dir=args.finetune_dir, 
+                                sent_model=None) # type QADataset
+
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
@@ -520,7 +532,11 @@ def main():
         # which val sets do we need to keep pristine and which can we use for metalearing/training hyperpameters?
         val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
 
-        train_dataset, _ = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'train', augment_datasets=args.train_datasets, augment_data_dir=args.train_dir) # type QADataset
+        train_dataset, _ = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'train', 
+                                augment_datasets=args.train_datasets, 
+                                augment_data_dir=args.train_dir,
+                                sent_model=None) # type QADataset
+
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
