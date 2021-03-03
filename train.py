@@ -145,9 +145,9 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
                             if i == word_to_mask:
                                 new_context += "[MASK] "
                             else:
-                                new_context += words[i]
+                                new_context += words[i] + " "
                         selected_context = new_context
-                    dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' [SEP] ' + selected_context
+                    dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' [SEP] ' + selected_context[:-1:]
 
         print("Done augmenting contexts!")
     ### END FINETUNE
