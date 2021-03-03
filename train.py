@@ -136,7 +136,11 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
                     choices = nlargest(num_contexts_in_class // 2, sim_scores)
                     chosen_aug_context_score, chosen_aug_context_i = choices[choice_i]
                     # print('choices', choice_i, chosen_aug_context_i, choices)#D
-                    dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + augment_dataset_dict['context'][chosen_aug_context_i]
+                    selected_context = augment_dataset_dict['context'][chosen_aug_context_i]
+                    for i in range(2):
+                        word_to_mask = random.choice(selected_context.split(" "))
+                        selected_context = selected_context.replace(word_to_mask, "[MASK]")
+                    dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' [SEP] ' + selected_context
 
         print("Done augmenting contexts!")
     ### END FINETUNE
