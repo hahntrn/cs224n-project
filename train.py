@@ -78,7 +78,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
 
         if sent_model is not None:
             print("Calculating sentence embedding and cosine similarities...")
-            sent_embedding =        sent_model.encode(dataset_dict['context'], convert_to_tensor=True)
+            sent_embedding = sent_model.encode(dataset_dict['context'], convert_to_tensor=True)
             aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True)
                                     for aug_dict in augment_dataset_dicts]
 
