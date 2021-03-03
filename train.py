@@ -78,8 +78,8 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
 
         if sent_model is not None:
             print("Calculating sentence embedding and cosine similarities...")
-            sent_embedding =        sent_model.encode(dataset_dict['context'], convert_to_tensor=True)
-            aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True)
+            sent_embedding =        sent_model.encode(dataset_dict['context'], convert_to_tensor=True, show_progress_bar=False)
+            aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True, show_progress_bar=False)
                                     for aug_dict in augment_dataset_dicts]
 
             cosine_sim_classes = [sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_emb)
@@ -90,13 +90,13 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
 
             print("Appending demonstrations...")
             for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
-                # for each class of out-of-domain dataset
                 for class_i in len(augment_dataset_dicts):
                     selected_context = augment_dataset_dict['context'][torch.argmax(cosine_sim_classes[class_i][context_i])]
                     word_to_mask = random.choice(selected_context.split())
                     selected_context = selected_context.replace(word_to_mask, tokenizer.mask_token)
                     dataset_dict['context'][context_i] += ' ' + tokenizer.sep_token + ' ' + selected_context
                     print("selected_context",selected_context)
+
                 # best_demonstrations = [
                 #                 augment_dataset_dict['context'][
                 #                     torch.argmax(cosine_sim_classes[class_i][context_i])]
