@@ -9,7 +9,7 @@ from transformers import DistilBertTokenizerFast
 from transformers import DistilBertForQuestionAnswering
 from transformers import AdamW
 from tensorboardX import SummaryWriter
-from sentence_transformers import SentenceTransformer # pip3 install -U sentence-transformers
+import sentence_transformers
 
 
 from torch.utils.data import DataLoader
@@ -77,9 +77,9 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
         print("Augmenting contexts in prepare_training_data...")
 
         if sent_model is not None:
-            print("Calculating sentence embedding and cosine similarities...")
-            sent_embedding =        sent_model.encode(dataset_dict['context'], convert_to_tensor=True)
-            aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True)
+            print("  > Calculating sentence embedding and cosine similarities...")
+            sent_embedding =        sent_model.encode(dataset_dict['context'], convert_to_tensor=True, show_progress_bar=False) # deprecated logging lib in SentenceTransformer.py source code
+            aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True, show_progress_bar=False)
                                     for aug_dict in augment_dataset_dicts]
 
             cosine_sim_classes = [sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_emb)
@@ -88,11 +88,10 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
             print("aug_embeddings_classes",aug_embeddings_classes)#D
             print("cosine_sim_classes",cosine_sim_classes)#D
 
-            print("Appending demonstrations...")
+            print("  > Appending demonstrations...")
             for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
-                # for each class of out-of-domain dataset
-                for class_i in len(augment_dataset_dicts):
-                    selected_context = augment_dataset_dict['context'][torch.argmax(cosine_sim_classes[class_i][context_i])]
+                for class_i in range(len(augment_dataset_dicts)):
+                    selected_context = augment_dataset_dicts[class_i]['context'][torch.argmax(cosine_sim_classes[class_i][context_i])]
                     word_to_mask = random.choice(selected_context.split())
                     selected_context = selected_context.replace(word_to_mask, tokenizer.mask_token)
                     dataset_dict['context'][context_i] += ' ' + tokenizer.sep_token + ' ' + selected_context
@@ -142,10 +141,17 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
                     # print('choices', choice_i, chosen_aug_context_i, choices)#D
                     selected_context = augment_dataset_dict['context'][chosen_aug_context_i]
                     for i in range(2):
-                        word_to_mask = random.choice(selected_context.split(" "))
-                        selected_context = selected_context.replace(word_to_mask, tokenizer.mask_token) #"[MASK]")
-                    dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + tokenizer.sep_token + ' ' + selected_context # ' [SEP] ' + selected_context
-
+                        words = selected_context.split(" ")
+                        word_to_mask = random.randint(len(words))
+                        new_context = ""
+                        for i in range(len(words)):
+                            if i == word_to_mask:
+                                new_context += tokenizer.mask_token
+                            else:
+                                new_context += words[i]
+                            new_context += " "
+                        selected_context = new_context
+                    dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + tokenizer.sep_token + ' ' + selected_context[:-1:]
         print("Done augmenting contexts!")
     ### END FINETUNE
 
@@ -437,7 +443,7 @@ def main():
     special_tokens_dict = {'additional_special_tokens': ['[MASK]', '[SEP]']} # tokenizer.mask_token and mask_token_id? see .cls_token
     num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
     model.resize_token_embeddings(len(tokenizer))
-    sent_model = SentenceTransformer('distilbert-base-uncased')
+    sent_model = sentence_transformers.SentenceTransformer('distilbert-base-uncased')
 
     if args.do_train:
         if not os.path.exists(args.save_dir):
@@ -504,11 +510,7 @@ def main():
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
 
-        # TODO: sample |dev| examples from ood train to augment
-
         val_dataset, val_dict = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'val') # use ood train as validation set
-        # val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
-        # sample len(val_dataset) examples from augment_dataset train
 
         # TODO augment size wrong and unused?
         train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train',
