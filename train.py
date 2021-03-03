@@ -114,6 +114,73 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
                     word_to_mask = random.choice(selected_context.split(" "))
                     selected_context = selected_context.replace(word_to_mask, "[MASK]")
                 dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + selected_context
+        print("Augmenting contexts in prepare_training_data...")
+
+        if sent_model is not None:
+            print("Calculating sentence embedding and cosine similarities...")
+            sent_embedding =        sent_model.encode(dataset_dict['context'], convert_to_tensor=True)
+            aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True)
+                                    for aug_dict in augment_dataset_dicts]
+
+            cosine_sim_classes = [sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_emb)
+                                    for aug_emb in aug_embeddings_classes]
+            print("sent_embedding",sent_embedding) #D
+            print("aug_embeddings_classes",aug_embeddings_classes)#D
+            print("cosine_sim_classes",cosine_sim_classes)#D
+
+            print("Appending demonstrations...")
+            for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
+                # for each class of out-of-domain dataset
+                best_demonstrations = [
+                                augment_dataset_dict['context'][
+                                    torch.argmax(cosine_sim_classes[class_i][context_i])]
+                                for class_i in len(augment_dataset_dicts)]
+
+                print("best_demonstrations",best_demonstrations)#D
+                dataset_dict['context'][context_i] += ' ' + ' '.join(best_demonstrations)
+
+        else:
+            # list of <num_class> lists each containing <num_contexts_in_class> context strings
+            # print('augment_dataset_dicts:', augment_dataset_dicts)#D
+            # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
+            # aug_classes = []
+            # for augment_dataset_dict in augment_dataset_dicts:
+            #     aug_freqs = []
+            #     for aug_context in augment_dataset_dict['context']:
+            #         aug_freqs.append(util.get_fr
+
+            # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
+            aug_freq_lists = [util.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
+            # print('!!! aug_freq_lists in prepare train data', aug_freq_lists)#D
+            # print('1###', aug_freq_lists[0][0])#D
+
+
+            # loop over each in-domain context
+            for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
+                # print('2###', aug_freq_lists[0][0])#D
+                # for each class of out-of-domain dataset
+                for class_i, augment_dataset_dict in enumerate(augment_dataset_dicts):
+                    # print('aument_dataset_dict', augment_dataset_dict)#D
+
+                    # compute similarity scores for each context in this class
+                    sim_scores = []
+                    # print('3###', aug_freq_lists[0][0])#D
+                    for aug_context_i, aug_context in enumerate(augment_dataset_dict['context']):
+                        # print('in prepare train data.', aug_freq_lists[class_i])
+                        sim_scores.append((util.get_dict_similarity(aug_freq_lists[class_i][aug_context_i], util.get_freq_dict(aug_context)),aug_context_i))
+
+
+                    # append the a random context in the top 50% most similar to the in-domain example's context
+                    num_contexts_in_class = len(augment_dataset_dict['context'])
+                    choice_i = random.randint(0, num_contexts_in_class // 2 - 1) # range inclusive
+                    choices = nlargest(num_contexts_in_class // 2, sim_scores)
+                    chosen_aug_context_score, chosen_aug_context_i = choices[choice_i]
+                    # print('choices', choice_i, chosen_aug_context_i, choices)#D
+                    for i in range(2):
+                        word_to_mask = random.choice(selected_context.split(" "))
+                        selected_context = selected_context.replace(word_to_mask, "[MASK]")
+                    dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' [SEP] ' + augment_dataset_dict['context'][chosen_aug_context_i]
+
         print("Done augmenting contexts!")
     ### END FINETUNE
 
