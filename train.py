@@ -91,17 +91,17 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
             print("Appending demonstrations...")
             for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
                 # for each class of out-of-domain dataset
-                best_demonstrations = [
-                                augment_dataset_dict['context'][
-                                    torch.argmax(cosine_sim_classes[class_i][context_i])]
-                                for class_i in len(augment_dataset_dicts)]
-
-                print("best_demonstrations",best_demonstrations)#D
-                for i in range(2):
-                    word_to_mask = random.choice(selected_context.split(" "))
-                    selected_context = selected_context.replace(word_to_mask, tokenizer.mask_token) #"[MASK]")
-                dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + tokenizer.sep_token + ' ' + selected_context # ' [SEP] ' + selected_context
-                dataset_dict['context'][context_i] += ' ' + ' '.join(best_demonstrations)
+                for class_i in len(augment_dataset_dicts):
+                    selected_context = augment_dataset_dict['context'][torch.argmax(cosine_sim_classes[class_i][context_i])]
+                    word_to_mask = random.choice(selected_context.split())
+                    selected_context = selected_context.replace(word_to_mask, tokenizer.mask_token)
+                    dataset_dict['context'][context_i] += ' ' + tokenizer.sep_token + ' ' + selected_context
+                    print("selected_context",selected_context)
+                # best_demonstrations = [
+                #                 augment_dataset_dict['context'][
+                #                     torch.argmax(cosine_sim_classes[class_i][context_i])]
+                #                 for class_i in len(augment_dataset_dicts)]
+                # print("best_demonstrations",best_demonstrations)#D
 
         else:
             # list of <num_class> lists each containing <num_contexts_in_class> context strings
@@ -433,7 +433,7 @@ def main():
     # model.to(args.device)
 
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
-    print('TOKENIZER', tokenizer.mask_token, tokenizer.mask_token_id, tokenizer.sep_token, tokenizer.sep_token_id);
+    # print('TOKENIZER', tokenizer.mask_token, tokenizer.mask_token_id, tokenizer.sep_token, tokenizer.sep_token_id);
     special_tokens_dict = {'additional_special_tokens': ['[MASK]', '[SEP]']} # tokenizer.mask_token and mask_token_id? see .cls_token
     num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
     model.resize_token_embeddings(len(tokenizer))
