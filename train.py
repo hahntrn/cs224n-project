@@ -423,10 +423,14 @@ def main():
     # if --load-checkpoint flag is True, load pretrained model from --load-dir
     pretrained = os.path.join(args.load_dir, 'checkpoint') if args.load_checkpoint else 'distilbert-base-uncased'
     model = DistilBertForQuestionAnswering.from_pretrained(pretrained)
+
     args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     model.to(args.device)
 
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
+    special_tokens_dict = {'additional_special_tokens': ['[MASK]', '[SEP]']} # tokenizer.mask_token and mask_token_id? see .cls_token
+    num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
+    model.resize_token_embeddings(len(tokenizer))
     sent_model = SentenceTransformer('distilbert-base-uncased')
 
     if args.do_train:
