@@ -97,6 +97,10 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
                                 for class_i in len(augment_dataset_dicts)]
 
                 print("best_demonstrations",best_demonstrations)#D
+                for i in range(2):
+                    word_to_mask = random.choice(selected_context.split(" "))
+                    selected_context = selected_context.replace(word_to_mask, tokenizer.mask_token) #"[MASK]")
+                dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + tokenizer.sep_token + ' ' + selected_context # ' [SEP] ' + selected_context
                 dataset_dict['context'][context_i] += ' ' + ' '.join(best_demonstrations)
 
         else:
@@ -139,8 +143,8 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
                     selected_context = augment_dataset_dict['context'][chosen_aug_context_i]
                     for i in range(2):
                         word_to_mask = random.choice(selected_context.split(" "))
-                        selected_context = selected_context.replace(word_to_mask, "[MASK]")
-                    dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' [SEP] ' + selected_context
+                        selected_context = selected_context.replace(word_to_mask, tokenizer.mask_token) #"[MASK]")
+                    dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + tokenizer.sep_token + ' ' + selected_context # ' [SEP] ' + selected_context
 
         print("Done augmenting contexts!")
     ### END FINETUNE
@@ -421,13 +425,15 @@ def main():
     util.set_seed(args.seed)
 
     # if --load-checkpoint flag is True, load pretrained model from --load-dir
-    pretrained = os.path.join(args.load_dir, 'checkpoint') if args.load_checkpoint else 'distilbert-base-uncased'
+    # pretrained = os.path.join(args.load_dir, 'checkpoint') if args.load_checkpoint else 'distilbert-base-uncased'
+    pretrained = 'distilbert-base-uncased'
     model = DistilBertForQuestionAnswering.from_pretrained(pretrained)
 
-    args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    model.to(args.device)
+    # args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    # model.to(args.device)
 
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
+    print('TOKENIZER', tokenizer.mask_token, tokenizer.mask_token_id, tokenizer.sep_token, tokenizer.sep_token_id);
     special_tokens_dict = {'additional_special_tokens': ['[MASK]', '[SEP]']} # tokenizer.mask_token and mask_token_id? see .cls_token
     num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
     model.resize_token_embeddings(len(tokenizer))
