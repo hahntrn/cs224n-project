@@ -165,7 +165,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
                 # compute similarity scores for each context in this class
                 sim_scores = []
                 # print('3###', aug_freq_lists[0][0])#D
-                    for aug_context_i, aug_context in enumerate(augment_dataset_dict['context']):
+                for aug_context_i, aug_context in enumerate(augment_dataset_dict['context']):
                     # print('in prepare train data.', aug_freq_lists[class_i])
                     sim_scores.append((util.get_dict_similarity(aug_freq_lists[class_i][aug_context_i], util.get_freq_dict(aug_context)),aug_context_i))
 
