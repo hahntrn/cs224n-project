@@ -116,28 +116,28 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
                 dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + selected_context
         print("Augmenting contexts in prepare_training_data...")
 
-        if sent_model is not None:
-            print("Calculating sentence embedding and cosine similarities...")
-            sent_embedding =        sent_model.encode(dataset_dict['context'], convert_to_tensor=True)
-            aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True)
-                                    for aug_dict in augment_dataset_dicts]
-
-            cosine_sim_classes = [sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_emb)
-                                    for aug_emb in aug_embeddings_classes]
-            print("sent_embedding",sent_embedding) #D
-            print("aug_embeddings_classes",aug_embeddings_classes)#D
-            print("cosine_sim_classes",cosine_sim_classes)#D
-
-            print("Appending demonstrations...")
-            for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
-                # for each class of out-of-domain dataset
-                best_demonstrations = [
-                                augment_dataset_dict['context'][
-                                    torch.argmax(cosine_sim_classes[class_i][context_i])]
-                                for class_i in len(augment_dataset_dicts)]
-
-                print("best_demonstrations",best_demonstrations)#D
-                dataset_dict['context'][context_i] += ' ' + ' '.join(best_demonstrations)
+        # if sent_model is not None:
+        #     print("Calculating sentence embedding and cosine similarities...")
+        #     sent_embedding =        sent_model.encode(dataset_dict['context'], convert_to_tensor=True)
+        #     aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True)
+        #                             for aug_dict in augment_dataset_dicts]
+        #
+        #     cosine_sim_classes = [sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_emb)
+        #                             for aug_emb in aug_embeddings_classes]
+        #     print("sent_embedding",sent_embedding) #D
+        #     print("aug_embeddings_classes",aug_embeddings_classes)#D
+        #     print("cosine_sim_classes",cosine_sim_classes)#D
+        #
+        #     print("Appending demonstrations...")
+        #     for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
+        #         # for each class of out-of-domain dataset
+        #         best_demonstrations = [
+        #                         augment_dataset_dict['context'][
+        #                             torch.argmax(cosine_sim_classes[class_i][context_i])]
+        #                         for class_i in len(augment_dataset_dicts)]
+        #
+        #         print("best_demonstrations",best_demonstrations)#D
+        #         dataset_dict['context'][context_i] += ' ' + ' '.join(best_demonstrations)
 
         else:
             # list of <num_class> lists each containing <num_contexts_in_class> context strings
