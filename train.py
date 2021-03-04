@@ -149,10 +149,12 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
             #     for aug_context in augment_dataset_dict['context']:
             #         aug_freqs.append(util.get_fr
 
-            # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
+        # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
         aug_freq_lists = [util.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
         # print('!!! aug_freq_lists in prepare train data', aug_freq_lists)#D
         # print('1###', aug_freq_lists[0][0])#D
+
+
         # loop over each in-domain context
         for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
             # print('2###', aug_freq_lists[0][0])#D
@@ -163,9 +165,9 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
                 # compute similarity scores for each context in this class
                 sim_scores = []
                 # print('3###', aug_freq_lists[0][0])#D
-                for aug_context_i, aug_context in enumerate(augment_dataset_dict['context']):
+                    for aug_context_i, aug_context in enumerate(augment_dataset_dict['context']):
                     # print('in prepare train data.', aug_freq_lists[class_i])
-                sim_scores.append((util.get_dict_similarity(aug_freq_lists[class_i][aug_context_i], util.get_freq_dict(aug_context)),aug_context_i))
+                    sim_scores.append((util.get_dict_similarity(aug_freq_lists[class_i][aug_context_i], util.get_freq_dict(aug_context)),aug_context_i))
 
 
                 # append the a random context in the top 50% most similar to the in-domain example's context
