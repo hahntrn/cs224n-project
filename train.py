@@ -494,7 +494,7 @@ def main():
 
         # TODO: sample |dev| examples from ood train to augment
 
-        val_dataset, val_dict = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'val')
+        val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         # val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         # sample len(val_dataset) examples from augment_dataset train
 
