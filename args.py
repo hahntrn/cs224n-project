@@ -23,6 +23,8 @@ def get_train_test_args():
     parser.add_argument('--do-train', action='store_true')
     parser.add_argument('--do-finetune', action='store_true')
     parser.add_argument('--do-finetune-load-checkpoint', action='store_true')
+    parser.add_argument('--do-finetune-sentence-bert', action='store_true')
+    parser.add_argument('--do-finetune-ood-vanilla', action='store_true')
     parser.add_argument('--do-augment-ood', action='store_true')
     parser.add_argument('--do-eval', action='store_true')
     parser.add_argument('--sub-file', type=str, default='')

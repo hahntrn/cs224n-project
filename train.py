@@ -436,7 +436,7 @@ def main():
                                 sampler=SequentialSampler(val_dataset))
         best_scores = trainer.train(model, train_loader, val_loader, val_dict)
 
-    if args.do_finetune_load_checkpoint:
+    if args.do_finetune_ood_vanilla:
         if not os.path.exists(args.save_dir):
             os.makedirs(args.save_dir)
         args.save_dir = util.get_save_dir(args.save_dir, args.run_name)
@@ -457,7 +457,7 @@ def main():
         # sample len(val_dataset) examples from augment_dataset train
 
         # TODO augment size wrong and unused?
-        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', augment_size=len(val_dataset), augment_datasets=args.finetune_datasets, augment_data_dir=args.finetune_dir) # type QADataset
+        train_dataset, _ = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'train') # type QADataset
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
