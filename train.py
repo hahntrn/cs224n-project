@@ -110,10 +110,16 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None): # p
                 chosen_aug_context_score, chosen_aug_context_i = choices[choice_i]
                 # print('choices', choice_i, chosen_aug_context_i, choices)
                 selected_context = augment_dataset_dict['context'][chosen_aug_context_i]
+                selected_context_sents = selected_context.split(".")
+                separated_context = ""
+                for context in selected_context_sents:
+                    if (len(separated_context) != 0):
+                       separated_context += " [SEP] "
+                    separated_context += context
                 for i in range(2):
-                    word_to_mask = random.choice(selected_context.split(" "))
-                    selected_context = selected_context.replace(word_to_mask, "[MASK]")
-                dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + selected_context
+                    word_to_mask = random.choice(separated_context.split(" "))
+                    separated_context = separated_context.replace(word_to_mask, "[MASK]")
+                dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + separated_context
         print("Augmenting contexts in prepare_training_data...")
 
         if sent_model is not None:
