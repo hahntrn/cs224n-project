@@ -12,6 +12,7 @@ def get_train_test_args():
     parser.add_argument('--load-checkpoint', action='store_true')
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--eval', action='store_true')
+    parser.add_argument('--mask', action='store_false')
     parser.add_argument('--train-datasets', type=str, default='squad,nat_questions,newsqa')
     parser.add_argument('--val-datasets', type=str, default='squad,nat_questions,newsqa')
     parser.add_argument('--finetune-datasets', type=str, default='race,relation_extraction,duorc')

@@ -55,7 +55,7 @@ def prepare_eval_data(dataset_dict, tokenizer):
 
 
 
-def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent_model=None): # pass indomain and oodomain dataset dicts in here
+def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent_model=None, mask=False): # pass indomain and oodomain dataset dicts in here
     tokenized_examples = tokenizer(dataset_dict['question'],
                                    dataset_dict['context'],
                                    truncation="only_second",
@@ -92,8 +92,9 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
             for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
                 for class_i in len(augment_dataset_dicts):
                     selected_context = augment_dataset_dict['context'][torch.argmax(cosine_sim_classes[class_i][context_i])]
-                    word_to_mask = random.choice(selected_context.split())
-                    selected_context = selected_context.replace(word_to_mask, tokenizer.mask_token)
+                    if mask:
+                        word_to_mask = random.choice(selected_context.split())
+                        selected_context = selected_context.replace(word_to_mask, tokenizer.mask_token)
                     dataset_dict['context'][context_i] += ' ' + tokenizer.sep_token + ' ' + selected_context
                     print("selected_context",selected_context)
 
@@ -213,7 +214,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
 
 
 # pass in indomain and oodomain dataset dicts
-def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split, augment_dataset_dicts=None, sent_model=None):
+def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split, augment_dataset_dicts=None, sent_model=None, mask=None):
     #TODO: cache this if possible
     cache_path = f'{dir_name}/{dataset_name}_encodings.pt'
     if os.path.exists(cache_path) and not args.recompute_features:
@@ -222,7 +223,7 @@ def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, spli
         if split=='train':
             # if augment flag is true/augment dataset not none:
             # tokenized_examples = prepare_train_data(dataset_dict, augment_dataset_dict, tokenizer)
-            tokenized_examples = prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=augment_dataset_dicts, sent_model=sent_model)
+            tokenized_examples = prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=augment_dataset_dicts, sent_model=sent_model, mask=mask)
         else:
             tokenized_examples = prepare_eval_data(dataset_dict, tokenizer)
         util.save_pickle(tokenized_examples, cache_path)
@@ -402,7 +403,7 @@ class Trainer():
                     global_idx += 1
         return best_scores
 
-def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0, augment_datasets=None, augment_data_dir=None, sent_model=None):
+def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0, augment_datasets=None, augment_data_dir=None, sent_model=None, mask=None):
     datasets = datasets.split(',')
     dataset_dict = None
     dataset_name=''
@@ -423,7 +424,8 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
 
     data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name,
                             augment_dataset_dicts=augment_dataset_dicts,
-                            sent_model=sent_model) # pass in both indomain and oodomain dataset dicts
+                            sent_model=sent_model,
+                            mask=mask) # pass in both indomain and oodomain dataset dicts
     return util.QADataset(data_encodings, train=(split_name=='train')), dataset_dict
 
 def main():
@@ -455,7 +457,7 @@ def main():
         log.info("Preparing Training Data...")
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
-        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train') # type QADataset
+        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', mask=args.mask) # type QADataset
         log.info("Preparing Validation Data...")
         val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         train_loader = DataLoader(train_dataset,
