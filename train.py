@@ -54,8 +54,9 @@ def prepare_eval_data(dataset_dict, tokenizer):
     return tokenized_examples
 
 
-
-def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent_model=None, mask=False): # pass indomain and oodomain dataset dicts in here
+# pass indomain and oodomain dataset dicts in here
+def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, 
+        sent_model=None, mask=False, sep_sentences=False): 
     tokenized_examples = tokenizer(dataset_dict['question'],
                                    dataset_dict['context'],
                                    truncation="only_second",
@@ -74,19 +75,19 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
         # randomly sample one of these contexts and add it to the original context
 
     if augment_dataset_dicts is not None:
-        print("Augmenting contexts in prepare_training_data...")
+        print(f"Augmenting contexts in prepare_training_data...mask={mask}, sep_sentences={sep_sentences}")
 
         if sent_model is not None:
             print("Calculating sentence embedding and cosine similarities...")
             sent_embedding =        sent_model.encode(dataset_dict['context'], convert_to_tensor=True, show_progress_bar=False)
             aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True, show_progress_bar=False)
                                     for aug_dict in augment_dataset_dicts]
-
             cosine_sim_classes = [sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_emb)
                                     for aug_emb in aug_embeddings_classes]
-            print("sent_embedding",sent_embedding) #D
-            print("aug_embeddings_classes",aug_embeddings_classes)#D
-            print("cosine_sim_classes",cosine_sim_classes)#D
+
+            # print("sent_embedding",sent_embedding) #D
+            # print("aug_embeddings_classes",aug_embeddings_classes)#D
+            # print("cosine_sim_classes",cosine_sim_classes)#D
 
             print("Appending demonstrations...")
             for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
@@ -95,6 +96,8 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
                     if mask:
                         word_to_mask = random.choice(selected_context.split())
                         selected_context = selected_context.replace(word_to_mask, tokenizer.mask_token)
+                    if sep_sentences:
+                        selected_context = selected_context.replace('. ', tokenizer.sep_token)
                     dataset_dict['context'][context_i] += ' ' + tokenizer.sep_token + ' ' + selected_context
                     print("selected_context",selected_context)
 
@@ -106,30 +109,16 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
 
         else:
             # list of <num_class> lists each containing <num_contexts_in_class> context strings
-            # print('augment_dataset_dicts:', augment_dataset_dicts)#D
-            # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
-            # aug_classes = []
-            # for augment_dataset_dict in augment_dataset_dicts:
-            #     aug_freqs = []
-            #     for aug_context in augment_dataset_dict['context']:
-            #         aug_freqs.append(util.get_fr
-
-            # aug_freq_lists = [util.get_freq_dict(aug_context) for augment_dataset_dict in augment_dataset_dicts for aug_context in augment_dataset_dict['context']]
             aug_freq_lists = [util.get_freq_list(augment_dataset_dict) for augment_dataset_dict in augment_dataset_dicts]
-            # print('!!! aug_freq_lists in prepare train data', aug_freq_lists)#D
-            # print('1###', aug_freq_lists[0][0])#D
-
 
             # loop over each in-domain context
             for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
                 # for each class of out-of-domain dataset
                 for class_i, augment_dataset_dict in enumerate(augment_dataset_dicts):
-
                     # compute similarity scores for each context in this class
                     sim_scores = []
                     for aug_context_i, aug_context in enumerate(augment_dataset_dict['context']):
                         sim_scores.append((util.get_dict_similarity(aug_freq_lists[class_i][aug_context_i], util.get_freq_dict(aug_context)),aug_context_i))
-
 
                     # append the a random context in the top 50% most similar to the in-domain example's context
                     num_contexts_in_class = len(augment_dataset_dict['context'])
@@ -149,6 +138,8 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
                                     new_context += words[i]
                                 new_context += " "
                             selected_context = new_context
+                    if sep_sentences:
+                        selected_context = selected_context.replace('. ', tokenizer.sep_token)
                     dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + tokenizer.sep_token + ' ' + selected_context[:-1:]
         print("Done augmenting contexts!")
     ### END FINETUNE
@@ -210,7 +201,8 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
 
 
 # pass in indomain and oodomain dataset dicts
-def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split, augment_dataset_dicts=None, sent_model=None, mask=None):
+def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split, 
+        augment_dataset_dicts=None, sent_model=None, mask=None, sep_sentences=False):
     #TODO: cache this if possible
     cache_path = f'{dir_name}/{dataset_name}_encodings.pt'
     if os.path.exists(cache_path) and not args.recompute_features:
@@ -219,7 +211,11 @@ def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, spli
         if split=='train':
             # if augment flag is true/augment dataset not none:
             # tokenized_examples = prepare_train_data(dataset_dict, augment_dataset_dict, tokenizer)
-            tokenized_examples = prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=augment_dataset_dicts, sent_model=sent_model, mask=mask)
+            tokenized_examples = prepare_train_data(dataset_dict, tokenizer, 
+                    augment_dataset_dicts=augment_dataset_dicts, 
+                    sent_model=sent_model, 
+                    mask=mask,
+                    sep_sentences=sep_sentences)
         else:
             tokenized_examples = prepare_eval_data(dataset_dict, tokenizer)
         util.save_pickle(tokenized_examples, cache_path)
@@ -399,7 +395,8 @@ class Trainer():
                     global_idx += 1
         return best_scores
 
-def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0, augment_datasets=None, augment_data_dir=None, sent_model=None, mask=None):
+def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0, 
+        augment_datasets=None, augment_data_dir=None, sent_model=None, mask=None, sep_sentences=False):
     datasets = datasets.split(',')
     dataset_dict = None
     dataset_name=''
@@ -421,7 +418,8 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
     data_encodings = read_and_process(args, tokenizer, dataset_dict, data_dir, dataset_name, split_name,
                             augment_dataset_dicts=augment_dataset_dicts,
                             sent_model=sent_model,
-                            mask=mask) # pass in both indomain and oodomain dataset dicts
+                            mask=mask,
+                            sep_sentences=sep_sentences) # pass in both indomain and oodomain dataset dicts
     return util.QADataset(data_encodings, train=(split_name=='train')), dataset_dict
 
 def main():
@@ -443,6 +441,11 @@ def main():
     num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
     model.resize_token_embeddings(len(tokenizer))
     sent_model = SentenceTransformer('distilbert-base-uncased')
+    
+    # if using small ind train datasets, change the dataset names
+    if args.train_small:
+        print("Using small train datasets!")
+        args.train_datasets = 'squad_small,nat_questions_small,newsqa_small'
 
     if args.do_train:
         if not os.path.exists(args.save_dir):
@@ -453,7 +456,7 @@ def main():
         log.info("Preparing Training Data...")
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
-        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', mask=args.mask) # type QADataset
+        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', mask=args.mask, sep_sentences=args.sep_sentences) # type QADataset
         log.info("Preparing Validation Data...")
         val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         train_loader = DataLoader(train_dataset,
@@ -486,7 +489,7 @@ def main():
         # sample len(val_dataset) examples from augment_dataset train
 
         # TODO augment size wrong and unused?
-        train_dataset, _ = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'train') # type QADataset
+        train_dataset, _ = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'train', mask=args.mask, sep_sentences=args.sep_sentences) # type QADataset
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
@@ -512,7 +515,7 @@ def main():
                                 augment_size=len(val_dataset),
                                 augment_datasets=args.finetune_datasets,
                                 augment_data_dir=args.finetune_dir,
-                                sent_model=None) # type QADataset) 
+                                sent_model=None, mask=args.mask, sep_sentences=args.sep_sentences) # type QADataset) 
 
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
@@ -546,7 +549,7 @@ def main():
                                 augment_size=len(val_dataset),
                                 augment_datasets=args.finetune_datasets,
                                 augment_data_dir=args.finetune_dir,
-                                sent_model=None) # type QADataset
+                                sent_model=None, mask=args.mask, sep_sentences=args.sep_sentences) # type QADataset
 
 
 
@@ -614,7 +617,9 @@ def main():
         # sample len(val_dataset) examples from augment_dataset train
 
         # TODO augment size wrong and unused?
-        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', augment_size=len(val_dataset), augment_datasets=args.finetune_datasets, augment_data_dir=args.finetune_dir) # type QADataset
+        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', 
+                augment_size=len(val_dataset), augment_datasets=args.finetune_datasets, augment_data_dir=args.finetune_dir,
+                mask=args.mask, sep_sentences=args.sep_sentences) # type QADataset
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
@@ -645,7 +650,7 @@ def main():
         train_dataset, _ = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'train',
                                 augment_datasets=args.train_datasets,
                                 augment_data_dir=args.train_dir,
-                                sent_model=None) # type QADataset
+                                sent_model=None, mask=args.mask, sep_sentences=args.sep_sentences) # type QADataset
 
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
