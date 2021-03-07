@@ -122,16 +122,12 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
 
             # loop over each in-domain context
             for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
-                # print('2###', aug_freq_lists[0][0])#D
                 # for each class of out-of-domain dataset
                 for class_i, augment_dataset_dict in enumerate(augment_dataset_dicts):
-                    # print('aument_dataset_dict', augment_dataset_dict)#D
 
                     # compute similarity scores for each context in this class
                     sim_scores = []
-                    # print('3###', aug_freq_lists[0][0])#D
                     for aug_context_i, aug_context in enumerate(augment_dataset_dict['context']):
-                        # print('in prepare train data.', aug_freq_lists[class_i])
                         sim_scores.append((util.get_dict_similarity(aug_freq_lists[class_i][aug_context_i], util.get_freq_dict(aug_context)),aug_context_i))
 
 
@@ -140,19 +136,19 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, sent
                     choice_i = random.randint(0, num_contexts_in_class // 2 - 1) # range inclusive
                     choices = nlargest(num_contexts_in_class // 2, sim_scores)
                     chosen_aug_context_score, chosen_aug_context_i = choices[choice_i]
-                    # print('choices', choice_i, chosen_aug_context_i, choices)#D
                     selected_context = augment_dataset_dict['context'][chosen_aug_context_i]
-                    for i in range(2):
-                        words = selected_context.split(" ")
-                        word_to_mask = random.randint(len(words))
-                        new_context = ""
-                        for i in range(len(words)):
-                            if i == word_to_mask:
-                                new_context += tokenizer.mask_token
-                            else:
-                                new_context += words[i]
-                            new_context += " "
-                        selected_context = new_context
+                    if mask:
+                        for i in range(2):
+                            words = selected_context.split(" ")
+                            word_to_mask = random.randint(0, len(words)-1)
+                            new_context = ""
+                            for i in range(len(words)):
+                                if i == word_to_mask:
+                                    new_context += tokenizer.mask_token
+                                else:
+                                    new_context += words[i]
+                                new_context += " "
+                            selected_context = new_context
                     dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + tokenizer.sep_token + ' ' + selected_context[:-1:]
         print("Done augmenting contexts!")
     ### END FINETUNE
