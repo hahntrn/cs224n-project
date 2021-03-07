@@ -509,13 +509,13 @@ def main():
         log.info("Preparing Training Data...")
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
-        val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
+        val_dataset, val_dict = get_dataset(args, args.val_datasets, args.val_dir, tokenizer, 'val')
         train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train',
                                 augment_size=len(val_dataset),
                                 augment_datasets=args.finetune_datasets,
                                 augment_data_dir=args.finetune_dir,
                                 sent_model=None) # type QADataset) 
-        
+
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
