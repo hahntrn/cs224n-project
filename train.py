@@ -53,6 +53,11 @@ def prepare_eval_data(dataset_dict, tokenizer):
 
     return tokenized_examples
 
+def insert_sep(tokenizer, s, strings_to_replace):
+    for substr in strings_to_replace:
+        if substr in s:
+            s.replace(substr, tokenizer.sep_token)
+    return s
 
 # pass indomain and oodomain dataset dicts in here
 def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None, 
@@ -97,7 +102,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None,
                         word_to_mask = random.choice(selected_context.split())
                         selected_context = selected_context.replace(word_to_mask, tokenizer.mask_token)
                     if sep_sentences:
-                        selected_context = selected_context.replace('. ', tokenizer.sep_token)
+                        selected_context = insert_sep(tokenizer, selected_context, ['. ','? ', '\n', '! '])
                     dataset_dict['context'][context_i] += ' ' + tokenizer.sep_token + ' ' + selected_context
                     print("selected_context",selected_context)
 
@@ -139,7 +144,7 @@ def prepare_train_data(dataset_dict, tokenizer, augment_dataset_dicts=None,
                                 new_context += " "
                             selected_context = new_context
                     if sep_sentences:
-                        selected_context = selected_context.replace('. ', tokenizer.sep_token)
+                        selected_context = insert_sep(tokenizer, selected_context, ['. ','? ', '\n', '! '])
                     dataset_dict['context'][context_i] = dataset_dict['context'][context_i] + ' ' + tokenizer.sep_token + ' ' + selected_context[:-1:]
         print("Done augmenting contexts!")
     ### END FINETUNE
