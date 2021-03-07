@@ -21,7 +21,7 @@ def read_squad_small(path, n_splits=5, seed=1):
     #     chosen_passages = random.sample(group['paragraphs'], n_samples_per_split)
     #     small_squad_dict['data'].append(chosen_passages) # appends list of sampled passages
     #     print('chosen passages:\n', chosen_passages)
-    return {'data': [random.sample(squad_dict['data'], n_groups_per_split)]}
+    return {'data': random.sample(squad_dict['data'], n_groups_per_split)}
 
     # Approach 2: 
     # # 1. create qa:context dict
