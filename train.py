@@ -112,7 +112,7 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
                         #Find the pairs with the highest cosine similarity scores
                         pairs = []
                         for i in range(len(cosine_sim_sentences)-1):
-                            for j in range(i+1, len(cosine_sim_sentences)):
+                            for j in range(i+1, len(cosine_sim_sentences) - 1):
                                 pairs.append({'index': [i, j], 'score': cosine_sim_sentences[i][j]})
 
                         #Sort scores in decreasing order
