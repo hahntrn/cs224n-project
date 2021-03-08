@@ -80,7 +80,8 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
 
         if sent_model is not None:
             print("Calculating sentence embedding and cosine similarities...")
-            sent_embedding =        sent_model.encode(dataset_dict['context'], convert_to_tensor=True, show_progress_bar=False)
+            
+            sent_embedding = sent_model.encode(dataset_dict['context'], convert_to_tensor=True, show_progress_bar=False) # ind context embeddings
             aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True, show_progress_bar=False)
                                     for aug_dict in augment_dataset_dicts]
             cosine_sim_classes = [sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_emb)
@@ -101,11 +102,13 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
                         selected_context = re.sub(RE_SENTENCE_DELIMS, tokenizer.sep_token, selected_context)
                     if args.single_sentence_demons:
                         sentences = re.split(RE_SENTENCE_DELIMS, selected_context)
-                        ind_context_embedding = aug_embeddings_classes[class_i][context_i]
-                        aug_context_sentences = [sent_model.encode(sentence, convert_to_tensor=True, show_progress_bar=False)
-                                                for sentence in sentences]
-                        cosine_sim_sentences = [sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_emb)
-                                                for sent_embedding in aug_context_sentences]
+                        ind_context_embedding = sent_embedding[context_i]
+                        aug_context_sentences = sent_model.encode(sentences, convert_to_tensor=True, show_progress_bar=False)
+                        cosine_sim_sentences = sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_context_sentences)
+                        selected_sentence = sentences[torch.argmax(cosine_sim_sentences)]
+                        print("selected_context: {selected_sentence}\nMost relevant to {selected_context}")
+                        selected_context = selected_sentence # should call this demonstration
+                        
                     dataset_dict['context'][context_i] += ' ' + tokenizer.sep_token + ' ' + selected_context
                     print("selected_context",selected_context)
 

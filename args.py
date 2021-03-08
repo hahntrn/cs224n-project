@@ -10,6 +10,7 @@ def get_train_test_args():
     parser.add_argument('--save-dir', type=str, default='save/')
     parser.add_argument('--load-dir', type=str, default='save/')
     parser.add_argument('--load-checkpoint', action='store_true')
+    parser.add_argument('--log-debug', action='store_true')         # writes print statements to log file
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--eval', action='store_true')
     parser.add_argument('--mask', action='store_true')
