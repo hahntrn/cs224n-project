@@ -46,7 +46,7 @@ def split_set(data_dir, datasets, n_splits=5):
     for dataset in datasets:
         fp = f'{data_dir}/{dataset}'
         dataset_dict_curr = read_squad_small(fp, n_splits=n_splits)
-        print(f'Saving {fp}')
+        print(f'Saving {fp}_small')
         with open(f'{fp}_small', 'w+') as writefp:
             json.dump(dataset_dict_curr, writefp)
 
