@@ -109,6 +109,7 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
                         cosine_sim_sentences = sent_util.pytorch_cos_sim(sent_embedding, aug_context_sentences)
                         print('max index in tensor: ', torch.argmax(cosine_sim_sentences))
                         print('len of cosine_sim_sentences: ', len(cosine_sim_sentences))
+                        print(cosine_sim_sentences)
                         selected_sentence = sentences[torch.argmax(cosine_sim_sentences)]
                         print("selected_context: {selected_sentence}\nMost relevant to {selected_context}")
                         selected_context = selected_sentence # should call this demonstration
