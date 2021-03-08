@@ -10,6 +10,7 @@ from transformers import DistilBertForQuestionAnswering
 from transformers import AdamW
 from tensorboardX import SummaryWriter
 from sentence_transformers import SentenceTransformer # pip3 install -U sentence-transformers
+from sentence_transformers import util as sent_util
 
 
 from torch.utils.data import DataLoader
@@ -84,7 +85,7 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
             sent_embedding = sent_model.encode(dataset_dict['context'], convert_to_tensor=True, show_progress_bar=False) # ind context embeddings
             aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True, show_progress_bar=False)
                                     for aug_dict in augment_dataset_dicts]
-            cosine_sim_classes = [SentenceTransformer.util.pytorch_cos_sim(sent_embedding, aug_emb)
+            cosine_sim_classes = [sent_util.pytorch_cos_sim(sent_embedding, aug_emb)
                                     for aug_emb in aug_embeddings_classes]
 
             # print("sent_embedding",sent_embedding) #D
@@ -104,7 +105,7 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
                         sentences = re.split(RE_SENTENCE_DELIMS, selected_context)
                         ind_context_embedding = sent_embedding[context_i]
                         aug_context_sentences = sent_model.encode(sentences, convert_to_tensor=True, show_progress_bar=False)
-                        cosine_sim_sentences = sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_context_sentences)
+                        cosine_sim_sentences = sent_util.pytorch_cos_sim(sent_embedding, aug_context_sentences)
                         selected_sentence = sentences[torch.argmax(cosine_sim_sentences)]
                         print("selected_context: {selected_sentence}\nMost relevant to {selected_context}")
                         selected_context = selected_sentence # should call this demonstration
