@@ -113,7 +113,7 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
                         pairs = []
                         for i in range(len(cosine_sim_sentences)-1):
                             for j in range(i+1, len(cosine_sim_sentences)):
-                                pairs.append({'index': [i, j], 'score': cosine_scores[i][j]})
+                                pairs.append({'index': [i, j], 'score': cosine_sim_sentences[i][j]})
 
                         #Sort scores in decreasing order
                         pairs = sorted(pairs, key=lambda x: x['score'], reverse=True)
