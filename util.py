@@ -192,7 +192,7 @@ def read_squad(path):
     with open(path, 'rb') as f:
         squad_dict = json.load(f)
     data_dict = {'question': [], 'context': [], 'id': [], 'answer': []}
-    print("error: ", squad_dict['data'][1]['paragraphs'])
+    print("error: ", squad_dict['data'][0]['paragraphs'][0])
     for group in squad_dict['data']:
         for passage in group['paragraphs']: # error here, list indices must be integers, not str: passage is list
             context = passage['context']
