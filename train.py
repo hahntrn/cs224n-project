@@ -540,6 +540,38 @@ def main():
                                 sampler=SequentialSampler(val_dataset))
         best_scores = trainer.train(model, train_loader, val_loader, val_dict)
 
+    if args.do_finetune_demons:
+        if not os.path.exists(args.save_dir):
+            os.makedirs(args.save_dir)
+        args.save_dir = util.get_save_dir(args.save_dir, args.run_name)
+        log = util.get_logger(args.save_dir, 'log_train')
+        log.info(f'Args: {json.dumps(vars(args), indent=4, sort_keys=True)}')
+        log.info("Preparing Training Data...")
+        args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        trainer = Trainer(args, log)
+        val_dataset, val_dict = get_dataset(args, args.val_datasets, args.val_dir, tokenizer, 'val')
+        train_dataset, _ = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'train',
+                                augment_size=len(val_dataset),
+                                augment_datasets=args.train_datasets,
+                                augment_data_dir=args.train_dir,
+                                sent_model=sent_model) # type QADataset)
+
+        log.info("Preparing Validation Data...")
+        train_loader = DataLoader(train_dataset,
+                                batch_size=args.batch_size,
+                                sampler=RandomSampler(train_dataset))
+        (train_loader)
+        val_loader = DataLoader(val_dataset,
+                                batch_size=args.batch_size,
+                                sampler=SequentialSampler(val_dataset))
+
+        # load saved model tuned on in-domain train set
+        checkpoint_path = os.path.join(args.load_dir, 'checkpoint')
+        model = DistilBertForQuestionAnswering.from_pretrained(checkpoint_path)
+        model.to(args.device)
+
+        best_scores = trainer.train(model, train_loader, val_loader, val_dict)
+
 
     if args.do_finetune:
         if not os.path.exists(args.save_dir):
