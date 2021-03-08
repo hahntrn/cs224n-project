@@ -449,7 +449,7 @@ def main():
     special_tokens_dict = {'additional_special_tokens': ['[MASK]', '[SEP]']} # tokenizer.mask_token and mask_token_id? see .cls_token
     num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
     model.resize_token_embeddings(len(tokenizer))
-    sent_model = SentenceTransformer('distilbert-base-uncased')
+    sent_model = SentenceTransformer('distilbert-base-uncased') if args.use_sent_transformer else None
     
     # if using small ind train datasets, change the dataset names
     if args.train_small:
@@ -524,7 +524,7 @@ def main():
                                 augment_size=len(val_dataset),
                                 augment_datasets=args.finetune_datasets,
                                 augment_data_dir=args.finetune_dir,
-                                sent_model=None) # type QADataset) 
+                                sent_model=sent_model) # type QADataset) 
 
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,

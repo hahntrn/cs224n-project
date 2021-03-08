@@ -15,6 +15,7 @@ def get_train_test_args():
     parser.add_argument('--eval', action='store_true')
     parser.add_argument('--mask', action='store_true')
     parser.add_argument('--sep-sentences', action='store_true')
+    parser.add_argument('--use-sent-transformer', action='store_true')
     parser.add_argument('--single-sentence-demons', action='store_true')
     parser.add_argument('--train-datasets', type=str, default='squad,nat_questions,newsqa')
     parser.add_argument('--train-small', action='store_true')
