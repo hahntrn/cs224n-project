@@ -95,7 +95,7 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
             print("Appending demonstrations...")
             for context_i, ind_context in enumerate(tqdm(dataset_dict['context'])):
                 for class_i in range(len(augment_dataset_dicts)):
-                    selected_context = augment_dataset_dict['context'][torch.argmax(cosine_sim_classes[class_i][context_i])]
+                    selected_context = augment_dataset_dicts['context'][torch.argmax(cosine_sim_classes[class_i][context_i])]
                     if args.mask:
                         word_to_mask = random.choice(selected_context.split())
                         selected_context = selected_context.replace(word_to_mask, tokenizer.mask_token)
