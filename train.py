@@ -84,7 +84,7 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
             sent_embedding = sent_model.encode(dataset_dict['context'], convert_to_tensor=True, show_progress_bar=False) # ind context embeddings
             aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True, show_progress_bar=False)
                                     for aug_dict in augment_dataset_dicts]
-            cosine_sim_classes = [sentence_transformers.util.pytorch_cos_sim(sent_embedding, aug_emb)
+            cosine_sim_classes = [SentenceTransformer.util.pytorch_cos_sim(sent_embedding, aug_emb)
                                     for aug_emb in aug_embeddings_classes]
 
             # print("sent_embedding",sent_embedding) #D
