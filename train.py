@@ -107,6 +107,8 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
                         ind_context_embedding = sent_embedding[context_i]
                         aug_context_sentences = sent_model.encode(sentences, convert_to_tensor=True, show_progress_bar=False)
                         cosine_sim_sentences = sent_util.pytorch_cos_sim(sent_embedding, aug_context_sentences)
+                        print('max index in tensor: ', torch.argmax(cosine_sim_sentences))
+                        print('len of sentence: ', len(sentences))
                         selected_sentence = sentences[torch.argmax(cosine_sim_sentences)]
                         print("selected_context: {selected_sentence}\nMost relevant to {selected_context}")
                         selected_context = selected_sentence # should call this demonstration
