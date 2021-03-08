@@ -55,8 +55,8 @@ def prepare_eval_data(dataset_dict, tokenizer):
     return tokenized_examples
 
 # pass indomain and oodomain dataset dicts in here
-def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None, 
-        sent_model=None): 
+def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None,
+        sent_model=None):
     tokenized_examples = tokenizer(dataset_dict['question'],
                                    dataset_dict['context'],
                                    truncation="only_second",
@@ -80,7 +80,7 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
 
         if sent_model is not None:
             print("Calculating sentence embedding and cosine similarities...")
-            
+
             sent_embedding = sent_model.encode(dataset_dict['context'], convert_to_tensor=True, show_progress_bar=False) # ind context embeddings
             aug_embeddings_classes = [sent_model.encode(aug_dict['context'], convert_to_tensor=True, show_progress_bar=False)
                                     for aug_dict in augment_dataset_dicts]
@@ -108,7 +108,7 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
                         selected_sentence = sentences[torch.argmax(cosine_sim_sentences)]
                         print("selected_context: {selected_sentence}\nMost relevant to {selected_context}")
                         selected_context = selected_sentence # should call this demonstration
-                        
+
                     dataset_dict['context'][context_i] += ' ' + tokenizer.sep_token + ' ' + selected_context
                     print("selected_context",selected_context)
 
@@ -216,7 +216,7 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
 
 
 # pass in indomain and oodomain dataset dicts
-def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split, 
+def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, split,
         augment_dataset_dicts=None, sent_model=None):
     #TODO: cache this if possible
     cache_path = f'{dir_name}/{dataset_name}_encodings.pt'
@@ -226,8 +226,8 @@ def read_and_process(args, tokenizer, dataset_dict, dir_name, dataset_name, spli
         if split=='train':
             # if augment flag is true/augment dataset not none:
             # tokenized_examples = prepare_train_data(args, dataset_dict, augment_dataset_dict, tokenizer)
-            tokenized_examples = prepare_train_data(args, dataset_dict, tokenizer, 
-                    augment_dataset_dicts=augment_dataset_dicts, 
+            tokenized_examples = prepare_train_data(args, dataset_dict, tokenizer,
+                    augment_dataset_dicts=augment_dataset_dicts,
                     sent_model=sent_model)
         else:
             tokenized_examples = prepare_eval_data(dataset_dict, tokenizer)
@@ -408,14 +408,14 @@ class Trainer():
                     global_idx += 1
         return best_scores
 
-def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0, 
+def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
         augment_datasets=None, augment_data_dir=None, sent_model=None):
     datasets = datasets.split(',')
     dataset_dict = None
     dataset_name=''
     for dataset in datasets:
         dataset_name += f'_{dataset}'
-        dataset_dict_curr = util.read_squad(f'{data_dir}/{dataset}')
+        dataset_dict_curr = util.read_squad(f'{data_dir}/{dataset}') # error here
         dataset_dict = util.merge(dataset_dict, dataset_dict_curr)
 
     augment_dataset_dicts = None
@@ -450,7 +450,7 @@ def main():
     num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
     model.resize_token_embeddings(len(tokenizer))
     sent_model = SentenceTransformer('distilbert-base-uncased') if args.use_sent_transformer else None
-    
+
     # if using small ind train datasets, change the dataset names
     if args.train_small:
         print("Using small train datasets!")
@@ -524,7 +524,7 @@ def main():
                                 augment_size=len(val_dataset),
                                 augment_datasets=args.finetune_datasets,
                                 augment_data_dir=args.finetune_dir,
-                                sent_model=sent_model) # type QADataset) 
+                                sent_model=sent_model) # type QADataset)
 
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
@@ -626,7 +626,7 @@ def main():
         # sample len(val_dataset) examples from augment_dataset train
 
         # TODO augment size wrong and unused?
-        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train', 
+        train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train',
             augment_datasets=args.finetune_datasets, augment_data_dir=args.finetune_dir) # type QADataset
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
@@ -637,7 +637,7 @@ def main():
                                 sampler=SequentialSampler(val_dataset))
         best_scores = trainer.train(model, train_loader, val_loader, val_dict)
 
-    
+
     if args.do_augment_ood:
         # create directory to save checkpoints
         if not os.path.exists(args.save_dir):

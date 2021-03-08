@@ -188,11 +188,13 @@ class QADataset(Dataset):
 
 def read_squad(path):
     path = Path(path)
+    print("path: ", path)
     with open(path, 'rb') as f:
         squad_dict = json.load(f)
     data_dict = {'question': [], 'context': [], 'id': [], 'answer': []}
     for group in squad_dict['data']:
-        for passage in group['paragraphs']:
+        print(group)
+        for passage in group['paragraphs']: # error here, list indices must be integers, not str: passage is list
             context = passage['context']
             for qa in passage['qas']:
                 question = qa['question']
@@ -484,7 +486,7 @@ def get_dict_similarity(d1, d2):
     similarity = 0
     for word in set(BoW1.keys()).intersection(BoW2.keys()):
         similarity += (BoW1[word] * BoW2[word])
-    cosine = similarity / float((BoW1_total*BoW2_total)**0.5) 
+    cosine = similarity / float((BoW1_total*BoW2_total)**0.5)
     return cosine
 
 def compute_similarities(sent1, sent2):
@@ -507,7 +509,7 @@ def compute_similarities(sent1, sent2):
     similarity = 0
     for word in set(BoW1.keys()).intersection(BoW2.keys()):
         similarity += (BoW1[word] * BoW2[word])
-    cosine = similarity / float((BoW1_total*BoW2_total)**0.5) 
+    cosine = similarity / float((BoW1_total*BoW2_total)**0.5)
     return cosine
 
 def get_sts(context, s2):
