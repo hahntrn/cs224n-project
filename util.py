@@ -188,11 +188,9 @@ class QADataset(Dataset):
 
 def read_squad(path):
     path = Path(path)
-    print("------path: ", path)
     with open(path, 'rb') as f:
         squad_dict = json.load(f)
     data_dict = {'question': [], 'context': [], 'id': [], 'answer': []}
-    print("type: ", type(squad_dict['data'][0]))
     for group in squad_dict['data']:
         for passage in group['paragraphs']: # error here, list indices must be integers, not str: passage is list
             context = passage['context']

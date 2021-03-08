@@ -21,9 +21,9 @@ def read_squad_small(path, n_splits=5, seed=1):
     #     chosen_passages = random.sample(group['paragraphs'], n_samples_per_split)
     #     small_squad_dict['data'].append(chosen_passages) # appends list of sampled passages
     #     print('chosen passages:\n', chosen_passages)
-    return {'data': random.sample(squad_dict['data'], n_groups_per_split)}
+    return {'data': random.sample(squad_dict['data'], n_groups_per_split), 'version': '1.1'}
 
-    # Approach 2: 
+    # Approach 2:
     # # 1. create qa:context dict
     # qa_d = {}
     # for group in squad_dict['data']:
@@ -38,7 +38,7 @@ def read_squad_small(path, n_splits=5, seed=1):
     #     if context not in small_squad_dict['data']:
     #         small_squad_dict['data']['context']
     #         # TODO
-        
+
 def split_set(data_dir, datasets, n_splits=5):
 
     # reference from train.get_dataset
