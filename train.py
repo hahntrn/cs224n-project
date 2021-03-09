@@ -5,6 +5,7 @@ from collections import OrderedDict
 import torch
 import csv
 import util
+import numpy as np
 from transformers import DistilBertTokenizerFast
 from transformers import DistilBertForQuestionAnswering
 from transformers import AdamW
@@ -106,11 +107,18 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
                         sentences = re.split(RE_SENTENCE_DELIMS, selected_context)
                         ind_context_embedding = sent_embedding[context_i]
                         aug_context_sentences = sent_model.encode(sentences, convert_to_tensor=True, show_progress_bar=False)
-                        cosine_sim_sentences = sent_util.pytorch_cos_sim(sent_embedding, aug_context_sentences)
+                        cosine_sim_sentences = sent_util.pytorch_cos_sim(sent_embedding, aug_context_sentences)[0]
                         print('max index in tensor: ', torch.argmax(cosine_sim_sentences))
                         print('len of cosine_sim_sentences: ', len(cosine_sim_sentences))
                         print(cosine_sim_sentences)
-                        selected_sentence = sentences[torch.argmax(cosine_sim_sentences)]
+
+                        top_k = 1
+
+                        # Sort the results in decreasing order and get the first top_k
+                        top_results = np.argpartition(-cos_sim_sentences, range(top_k))[0:top_k]
+                        selected_sentence = sentences[top_results[0]]
+
+                        # selected_sentence = sentences[torch.argmax(cosine_sim_sentences)]
                         print("selected_context: {selected_sentence}\nMost relevant to {selected_context}")
                         selected_context = selected_sentence # should call this demonstration
 
