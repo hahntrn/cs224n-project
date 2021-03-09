@@ -115,7 +115,7 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
                         top_k = 1
 
                         # Sort the results in decreasing order and get the first top_k
-                        top_results = np.argpartition(-cos_sim_sentences, range(top_k))[0:top_k]
+                        top_results = np.argpartition(-cosine_sim_sentences, range(top_k))[0:top_k]
                         selected_sentence = sentences[top_results[0]]
 
                         # selected_sentence = sentences[torch.argmax(cosine_sim_sentences)]
