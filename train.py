@@ -119,12 +119,12 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
                         selected_sentence = sentences[top_results[0]]
 
                         # selected_sentence = sentences[torch.argmax(cosine_sim_sentences)]
-                        print(f"--selected_sentence: {selected_sentence}")
-                        print(f"--Most relevant to: {selected_context}")
+                        # print(f"--selected_sentence: {selected_sentence}")
+                        # print(f"--Most relevant to: {selected_context}")
                         selected_context = selected_sentence # should call this demonstration
 
                     dataset_dict['context'][context_i] += ' ' + tokenizer.sep_token + ' ' + selected_context
-                    print("selected_context",selected_context)
+                    # print("selected_context",selected_context)
 
                 # best_demonstrations = [
                 #                 augment_dataset_dict['context'][
