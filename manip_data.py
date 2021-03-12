@@ -109,7 +109,7 @@ def translate_set(data_dir, datasets):
     # print(last_hidden_states)
 
 def main():
-    translate_set()
+    translate_set('datasets/oodomain_train', 'duorc,race,relation_extraction')
     # split_set('datasets/indomain_train', 'squad,nat_questions,newsqa')
 
 main()
