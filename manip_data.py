@@ -8,6 +8,7 @@ from transformers import MarianTokenizer, MarianMTModel
 from typing import List
 
 def translate(sample_text):
+    print(sample_text)
     src = 'en'  # source language
     trg = 'fr'  # target language
     forward_mname = f'Helsinki-NLP/opus-mt-{src}-{trg}'
