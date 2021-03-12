@@ -7,8 +7,8 @@ from tqdm import tqdm
 from transformers import MarianTokenizer, MarianMTModel
 from typing import List
 
-def translate(sample_text):
-    print(sample_text)
+def translate(sample_texts):
+    print(sample_texts)
     src = 'en'  # source language
     trg = 'fr'  # target language
     forward_mname = f'Helsinki-NLP/opus-mt-{src}-{trg}'
@@ -19,9 +19,8 @@ def translate(sample_text):
     backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname)
     backward_model = MarianMTModel.from_pretrained(backward_mname)
 
-    translated = foward_model.generate(**forward_tokenizer.prepare_seq2seq_batch([sample_text], return_tensors="pt"))
+    translated = foward_model.generate(**forward_tokenizer.prepare_seq2seq_batch(sample_texts, return_tensors="pt"))
     tgt_text = [forward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
-    print(tgt_text)
     back_translated = backward_model.generate(**backward_tokenizer.prepare_seq2seq_batch(tgt_text, return_tensors="pt"))
     output = [backward_tokenizer.decode(t, skip_special_tokens=True) for t in back_translated]
     print(output)
@@ -39,7 +38,6 @@ def augment_squad(path):
         backtranslated = {}
         backtranslated['title'] = translate(group['title'])
         backtranslated['paragraphs'] = []
-        print(group)
         for paragraph in group['paragraphs']:
             bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
             bt_para['context'] = translate(paragraph['context'])
@@ -47,6 +45,7 @@ def augment_squad(path):
                 bt_para['qas']['question'] = translate(qa['question'])
                 bt_para['qas']['id'] = i
                 i += 1
+            backtranslated['paragraphs'] += [bt_para]
         print(backtranslated)
         new_squad_data['data'].append(backtranslated)
     return new_squad_data
