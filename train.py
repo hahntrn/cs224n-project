@@ -6,6 +6,7 @@ import torch
 import csv
 import util
 import numpy as np
+import wandb
 from transformers import DistilBertTokenizerFast
 from transformers import DistilBertForQuestionAnswering
 from transformers import AdamW
@@ -451,7 +452,9 @@ def main():
     # define parser and arguments
     args = get_train_test_args()
     util.set_seed(args.seed)
-
+    wandb.init(project='bert', config=config_defaults)
+    config = wandb.config
+    config.learning_rate = 0.01
     # if --load-checkpoint flag is True, load pretrained model from --load-dir
     # pretrained = os.path.join(args.load_dir, 'checkpoint') if args.load_checkpoint else 'distilbert-base-uncased'
     pretrained = 'distilbert-base-uncased'
