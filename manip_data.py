@@ -26,7 +26,6 @@ def translate(sample_text):
     return output
 
 def augment_squad(path):
-    random.seed(seed)
     path = Path(path)
 
     with open(path, 'rb') as f:
