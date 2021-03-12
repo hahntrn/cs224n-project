@@ -22,7 +22,7 @@ def translate(sample_text):
     translated = foward_model.generate(**forward_tokenizer.prepare_seq2seq_batch([sample_text], return_tensors="pt"))
     tgt_text = [forward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
     print(tgt_text)
-    back_translated = backward_model.generate(**backward_tokenizer.prepare_seq2seq_batch([tgt_text], return_tensors="pt"))
+    back_translated = backward_model.generate(**backward_tokenizer.prepare_seq2seq_batch(tgt_text, return_tensors="pt"))
     output = [backward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
     print(output)
     return output
