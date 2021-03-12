@@ -4,6 +4,9 @@ import random
 import pprint
 from pathlib import Path
 from tqdm import tqdm
+from transformers import MarianTokenizer, MarianMTModel
+from typing import List
+
 
 def read_squad_small(path, n_splits=5, seed=1):
     random.seed(seed)
@@ -50,7 +53,28 @@ def split_set(data_dir, datasets, n_splits=5):
         with open(f'{fp}_small', 'w+') as writefp:
             json.dump(dataset_dict_curr, writefp)
 
+def translate_set():
+    src = 'en'  # source language
+    trg = 'fr'  # target language
+    sample_text = "I like my cat, Tommy"
+    mname = f'Helsinki-NLP/opus-mt-{src}-{trg}'
+
+    tokenizer = MarianTokenizer.from_pretrained(mname)
+    model = MarianMTModel.from_pretrained(mname)
+    translated = model.generate(**tokenizer.prepare_seq2seq_batch([sample_text], return_tensors="pt"))
+    tgt_text = [tokenizer.decode(t, skip_special_tokens=True) for t in translated]
+    print(tgt_text)
+    # model = MarianMTModel.from_pretrained(mname)
+    # tok = MarianTokenizer.from_pretrained(mname)
+    # input_ids = tokenizer("Studies have been shown that owning a dog is good for you", return_tensors="pt").input_ids  # Batch size 1
+    # decoder_input_ids = tokenizer("<pad> Studien haben gezeigt dass es hilfreich ist einen Hund zu besitzen", return_tensors="pt", add_special_tokens=False).input_ids  # Batch size 1
+
+    # outputs = model(input_ids=input_ids, decoder_input_ids=decoder_input_ids)
+    # last_hidden_states = outputs.decoder_hidden_states
+    # print(last_hidden_states)
+
 def main():
-    split_set('datasets/indomain_train', 'squad,nat_questions,newsqa')
+    translate_set()
+    # split_set('datasets/indomain_train', 'squad,nat_questions,newsqa')
 
 main()
