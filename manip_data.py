@@ -18,9 +18,11 @@ def translate(sample_text):
     backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname)
     backward_model = MarianMTModel.from_pretrained(backward_mname)
 
-    translated = model.generate(**tokenizer.prepare_seq2seq_batch([sample_text], return_tensors="pt"))
-    tgt_text = [tokenizer.decode(t, skip_special_tokens=True) for t in translated]
-    return tgt_text
+    translated = foward_model.generate(**tokenizer.prepare_seq2seq_batch([sample_text], return_tensors="pt"))
+    tgt_text = [forward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
+    back_translated = backward_model.generate(**tokenizer.prepare_seq2seq_batch([tgt_text], return_tensors="pt"))
+    output = [backward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
+    return output
 
 def augment_squad(path):
     random.seed(seed)
@@ -42,6 +44,7 @@ def augment_squad(path):
                 bt_para['qas']['question'] = translate(qa['question'])
                 bt_para['qas']['id'] = i
                 i += 1
+        print(backtranslated)
         new_squad_data['data'].append(backtranslated)
     return new_squad_data
 
@@ -109,7 +112,7 @@ def translate_set(data_dir, datasets):
     # print(last_hidden_states)
 
 def main():
-    translate_set('datasets/oodomain_train', 'duorc,race,relation_extraction')
+    translate_set('datasets/oodomain_train', 'duorc,race,relation_extraction')  
     # split_set('datasets/indomain_train', 'squad,nat_questions,newsqa')
 
 main()
