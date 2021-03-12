@@ -18,9 +18,9 @@ def translate(sample_text):
     backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname)
     backward_model = MarianMTModel.from_pretrained(backward_mname)
 
-    translated = foward_model.generate(**tokenizer.prepare_seq2seq_batch([sample_text], return_tensors="pt"))
+    translated = foward_model.generate(**forward_tokenizer.prepare_seq2seq_batch([sample_text], return_tensors="pt"))
     tgt_text = [forward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
-    back_translated = backward_model.generate(**tokenizer.prepare_seq2seq_batch([tgt_text], return_tensors="pt"))
+    back_translated = backward_model.generate(**backward_tokenizer.prepare_seq2seq_batch([tgt_text], return_tensors="pt"))
     output = [backward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
     print(output)
     return output
