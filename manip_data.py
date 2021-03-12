@@ -22,6 +22,7 @@ def translate(sample_text):
     tgt_text = [forward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
     back_translated = backward_model.generate(**tokenizer.prepare_seq2seq_batch([tgt_text], return_tensors="pt"))
     output = [backward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
+    print(output)
     return output
 
 def augment_squad(path):
