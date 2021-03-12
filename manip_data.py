@@ -7,6 +7,43 @@ from tqdm import tqdm
 from transformers import MarianTokenizer, MarianMTModel
 from typing import List
 
+def translate(sample_text):
+    src = 'en'  # source language
+    trg = 'fr'  # target language
+    forward_mname = f'Helsinki-NLP/opus-mt-{src}-{trg}'
+    backward_mname = f'Helsinki-NLP/opus-mt-{trg}-{src}'
+
+    forward_tokenizer = MarianTokenizer.from_pretrained(forward_mname)
+    foward_model = MarianMTModel.from_pretrained(forward_mname)
+    backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname)
+    backward_model = MarianMTModel.from_pretrained(backward_mname)
+
+    translated = model.generate(**tokenizer.prepare_seq2seq_batch([sample_text], return_tensors="pt"))
+    tgt_text = [tokenizer.decode(t, skip_special_tokens=True) for t in translated]
+    return tgt_text
+
+def augment_squad(path):
+    random.seed(seed)
+    path = Path(path)
+
+    with open(path, 'rb') as f:
+        squad_dict = json.load(f)
+
+    new_squad_data = squad_dict
+    i = 1000
+    for group in ((squad_dict['data'])):
+        backtranslated = {}
+        backtranslated['title'] = translate(group['title'])
+        backtranslated['paragraphs'] = []
+        for paragraph in group['paragraph']:
+            bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers'=[]}}
+            bt_para['context'] = translate(paragraph['context'])
+            for qa in paragraph['qas']
+                bt_para['qas']['question'] = translate(qa['question'])
+                bt_para['qas']['id'] = i
+                i += 1
+        new_squad_data['data'].append(backtranslated)
+    return new_squad_data
 
 def read_squad_small(path, n_splits=5, seed=1):
     random.seed(seed)
@@ -53,17 +90,15 @@ def split_set(data_dir, datasets, n_splits=5):
         with open(f'{fp}_small', 'w+') as writefp:
             json.dump(dataset_dict_curr, writefp)
 
-def translate_set():
-    src = 'en'  # source language
-    trg = 'fr'  # target language
-    sample_text = "I like my cat, Tommy"
-    mname = f'Helsinki-NLP/opus-mt-{src}-{trg}'
-
-    tokenizer = MarianTokenizer.from_pretrained(mname)
-    model = MarianMTModel.from_pretrained(mname)
-    translated = model.generate(**tokenizer.prepare_seq2seq_batch([sample_text], return_tensors="pt"))
-    tgt_text = [tokenizer.decode(t, skip_special_tokens=True) for t in translated]
-    print(tgt_text)
+def translate_set(data_dir, datasets):
+    datasets = datasets.split(',')
+    for dataset in datasets:
+        fp = f'{data_dir}/{dataset}'
+        dataset_dict_curr = augment_squad(fp)
+        print(f'Saving {fp}_augmented')
+        fp = f'{data_dir}/{dataset}'
+        with open(f'{fp}_augmented', 'w+') as writefp:
+            json.dump(dataset_dict_curr, writefp)
     # model = MarianMTModel.from_pretrained(mname)
     # tok = MarianTokenizer.from_pretrained(mname)
     # input_ids = tokenizer("Studies have been shown that owning a dog is good for you", return_tensors="pt").input_ids  # Batch size 1
