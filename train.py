@@ -152,7 +152,7 @@ def prepare_train_data(args, dataset_dict, tokenizer, augment_dataset_dicts=None
                     chosen_aug_context_score, chosen_aug_context_i = choices[choice_i]
                     selected_context = augment_dataset_dict['context'][chosen_aug_context_i]
                     if args.mask:
-                        for i in range(2):
+                        for i in range(len(selected_context.split()) // 12):
                             words = selected_context.split(" ")
                             word_to_mask = random.randint(0, len(words)-1)
                             new_context = ""
