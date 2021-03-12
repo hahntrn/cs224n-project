@@ -40,7 +40,7 @@ def augment_squad(path):
         backtranslated['title'] = translate(group['title'])
         backtranslated['paragraphs'] = []
         print(group)
-        for paragraph in group['paragraph']:
+        for paragraph in group['paragraphs']:
             bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
             bt_para['context'] = translate(paragraph['context'])
             for qa in paragraph['qas']:
