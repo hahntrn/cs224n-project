@@ -62,7 +62,7 @@ def augment_squad(path):
                             if qa['question'] not in answer_batch:
                                 answer_batch[qa['question']] = []
                             answer_batch_starts[qa['question']] += [answer['answer_start']]
-                            answer_batch[qa['question']] += [answer['text']]
+                            answer_batch[qa['question']] += answer['text']
                         # bt_para['qas']['question'] = translate(qa['question'])
                         #  bt_para['qas']['id'] = i
                         # i += 1
