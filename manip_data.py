@@ -37,7 +37,7 @@ def augment_squad(path):
     title_batch = []
     context_batch = []
     question_batch = []
-    print(squad_dict['data'])
+    # print(squad_dict['data'])
     for group in (squad_dict['data']):
         if i % 100 == 0:
             print(group)
@@ -48,7 +48,7 @@ def augment_squad(path):
         if 'title' in group:
             title_batch += [group['title']]
         backtranslated['paragraphs'] = []
-        if 'paragraphs' in group:
+        if 'paragraphs' in group and len(paragraphs) > 0:
             for paragraph in group['paragraphs']:
                 bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
                 # bt_para['context'] = translate(paragraph['context'])
