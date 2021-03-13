@@ -38,6 +38,8 @@ def augment_squad(path):
     context_batch = []
     question_batch = []
     for group in ((squad_dict['data'])):
+        if i >= 181920600 // 3:
+            break
         backtranslated = {}
         # backtranslated['title'] = translate(group['title'])
         # print(group.keys())
