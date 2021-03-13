@@ -56,8 +56,8 @@ def augment_squad(path):
                 if 'qas' in paragraph:
                     for qa in paragraph['qas']:
                         question_batch += [qa['question']]
-                        answer_batch_starts += [qa['answer']['answer_start']]
-                        answer_batch += [qa['answer']['text']]
+                        answer_batch_starts += [qa['answers']['answer_start']]
+                        answer_batch += [qa['answers']['text']]
                         # bt_para['qas']['question'] = translate(qa['question'])
                         #  bt_para['qas']['id'] = i
                         # i += 1
