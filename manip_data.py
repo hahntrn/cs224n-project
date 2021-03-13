@@ -72,26 +72,31 @@ def augment_squad(path):
             break
         i += 1
         # print(i)
-    translate(title_batch)
+    titles = translate(title_batch)
     print("title done!")
-    translate(context_batch)
+    contexts = translate(context_batch)
     print("contexts done!")
-    translate(question_batch)
-    translate(answer_batch)
+    questions = translate(question_batch)
+    question_to_index = {}
+    a_count = 0
+    for key in answer_batch.keys():
+        question_to_index[key] = a_count
+        a_count += len(answer_batch[key])
+    answers = translate(list(answer_batch.values()))
     print("all done!")
-    for i in range(len(title_batch)):
-        backtranslated = {}
-        backtranslated['title'] = title_batch[i]
-        bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
-        bt_para['context'] = context_batch[i]
-        bt_para['qas']['question'] = question_batch[i]
-        bt_para['qas']['answer'] = []
-        for question in answer_batch.keys():
-            for j in range(len(answer_batch[question])):
-                bt_para['qas']['answer'] += [{'answer_start': answer_batch_starts[question][j], 'text': answer_batch[question][j]}]
-        backtranslated['paragraphs'] += [bt_para]
-        new_squad_data.append(backtranslated)
-    return new_squad_data
+    # for i in range(len(titles)):
+    #     backtranslated = {}
+    #     backtranslated['title'] = titles[i]
+    #     bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
+    #     bt_para['context'] = contexts[i]
+    #     bt_para['qas']['question'] = questions[i]
+    #     bt_para['qas']['answer'] = []
+    #     for question in answer_batch.keys():
+    #         for j in range(len(answer_batch[question])):
+    #             bt_para['qas']['answer'] += [{'answer_start': answer_batch_starts[question][j], 'text': answer_batch[question][j]}]
+    #     backtranslated['paragraphs'] += [bt_para]
+    #     new_squad_data.append(backtranslated)
+    # return new_squad_data
 
 def read_squad_small(path, n_splits=5, seed=1):
     random.seed(seed)
