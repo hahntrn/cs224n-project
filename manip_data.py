@@ -60,7 +60,7 @@ def augment_squad(path):
                 # backtranslated['paragraphs'] += [bt_para]
             # print(backtranslated)
         i += 1
-        print(i)
+        # print(i)
         new_squad_data['data'].append(backtranslated)
     translate(title_batch)
     print("title done!")
