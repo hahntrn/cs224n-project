@@ -61,6 +61,8 @@ def augment_squad(path):
                         # i += 1
                 # backtranslated['paragraphs'] += [bt_para]
             # print(backtranslated)
+        else:
+            break
         i += 1
         # print(i)
         new_squad_data['data'].append(backtranslated)
