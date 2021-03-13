@@ -39,7 +39,7 @@ def augment_squad(path):
     question_batch = []
     for group in ((squad_dict['data'])):
         backtranslated = {}
-        # backtranslated['title'] = translate(group['title'])
+        backtranslated['title'] = translate(group['title'])
         title_batch += [group['title']]
         backtranslated['paragraphs'] = []
         for paragraph in group['paragraphs']:
