@@ -78,11 +78,11 @@ def augment_squad(path):
     # print("contexts done!")
     # questions = translate(question_batch)
     # question_to_index = {}
-    a_count = 0
-    for key in answer_batch.keys():
-        question_to_index[key] = a_count
-        a_count += len(answer_batch[key])
-    print(answer_batch.values())
+    # a_count = 0
+    # for key in answer_batch.keys():
+    #     question_to_index[key] = a_count
+    #     a_count += len(answer_batch[key])
+    print(list(answer_batch.values()))
     answers = translate(list(answer_batch.values()))
     print("all done!")
     counter = 0
