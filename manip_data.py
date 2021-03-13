@@ -41,7 +41,8 @@ def augment_squad(path):
         backtranslated = {}
         # backtranslated['title'] = translate(group['title'])
         # print(group.keys())
-        print(i)
+        if (i % 100):
+            print(i)
         if 'title' in group:
             title_batch += group['title']
         backtranslated['paragraphs'] = []
@@ -55,9 +56,11 @@ def augment_squad(path):
                         question_batch += [qa['question']]
                         # bt_para['qas']['question'] = translate(qa['question'])
                         #  bt_para['qas']['id'] = i
-                        i += 1
+                        # i += 1
                 # backtranslated['paragraphs'] += [bt_para]
             # print(backtranslated)
+        i += 1
+        print(i)
         new_squad_data['data'].append(backtranslated)
     translate(title_batch)
     print("title done!")
