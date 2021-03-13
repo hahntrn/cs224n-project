@@ -34,20 +34,32 @@ def augment_squad(path):
 
     new_squad_data = squad_dict
     i = 1000
+    title_batch = []
+    context_batch = []
+    question_batch = []
     for group in ((squad_dict['data'])):
         backtranslated = {}
-        backtranslated['title'] = translate(group['title'])
+        # backtranslated['title'] = translate(group['title'])
+        title_batch += [group['title']]
         backtranslated['paragraphs'] = []
         for paragraph in group['paragraphs']:
             bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
-            bt_para['context'] = translate(paragraph['context'])
+            # bt_para['context'] = translate(paragraph['context'])
+            context_batch += [paragraph['context']]
             for qa in paragraph['qas']:
-                bt_para['qas']['question'] = translate(qa['question'])
-                bt_para['qas']['id'] = i
+                question_batch += [qa['question']]
+                # bt_para['qas']['question'] = translate(qa['question'])
+                #  bt_para['qas']['id'] = i
                 i += 1
-            backtranslated['paragraphs'] += [bt_para]
-        print(backtranslated)
+            # backtranslated['paragraphs'] += [bt_para]
+        # print(backtranslated)
         new_squad_data['data'].append(backtranslated)
+    translate(title_batch)
+    print("title done!")
+    translate(context_batch)
+    print("contexts done!")
+    translate(question_batch)
+    print("all done!")
     return new_squad_data
 
 def read_squad_small(path, n_splits=5, seed=1):
