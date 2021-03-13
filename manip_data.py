@@ -46,7 +46,7 @@ def augment_squad(path):
         if (i % 100 == 0):
             print(i)
         if 'title' in group:
-            title_batch += group['title']
+            title_batch += [group['title']]
         backtranslated['paragraphs'] = []
         if 'paragraphs' in group:
             for paragraph in group['paragraphs']:
