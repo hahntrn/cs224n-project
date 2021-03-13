@@ -84,19 +84,21 @@ def augment_squad(path):
         a_count += len(answer_batch[key])
     answers = translate(list(answer_batch.values()))
     print("all done!")
-    # for i in range(len(titles)):
-    #     backtranslated = {}
-    #     backtranslated['title'] = titles[i]
-    #     bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
-    #     bt_para['context'] = contexts[i]
-    #     bt_para['qas']['question'] = questions[i]
-    #     bt_para['qas']['answer'] = []
-    #     for question in answer_batch.keys():
-    #         for j in range(len(answer_batch[question])):
-    #             bt_para['qas']['answer'] += [{'answer_start': answer_batch_starts[question][j], 'text': answer_batch[question][j]}]
-    #     backtranslated['paragraphs'] += [bt_para]
-    #     new_squad_data.append(backtranslated)
-    # return new_squad_data
+    counter = 0
+    for i in range(len(titles)):
+        backtranslated = {}
+        backtranslated['title'] = titles[i]
+        bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
+        bt_para['context'] = contexts[i]
+        bt_para['qas']['question'] = questions[i]
+        bt_para['qas']['answer'] = []
+        for question in answer_batch.keys():
+            for j in range(counter, question_to_index[question]):
+                bt_para['qas']['answer'] += [{'answer_start': answer_batch_starts[question][j - counter], 'text': answers[j]}]
+                counter += 1
+        backtranslated['paragraphs'] += [bt_para]
+        new_squad_data.append(backtranslated)
+    return new_squad_data
 
 def read_squad_small(path, n_splits=5, seed=1):
     random.seed(seed)
