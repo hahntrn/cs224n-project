@@ -102,7 +102,7 @@ def augment_squad(path):
                 bt_para['qas']['answer'] += [{'answer_start': answer_batch_starts[question][j - counter], 'text': answers[j]}]
                 counter += 1
         backtranslated['paragraphs'] += [bt_para]
-        new_squad_data.append(backtranslated)
+        new_squad_data['data'].append(backtranslated)
     return new_squad_data
 
 def read_squad_small(path, n_splits=5, seed=1):
