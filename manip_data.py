@@ -37,6 +37,7 @@ def augment_squad(path):
     title_batch = []
     context_batch = []
     question_batch = []
+    print(squad_dict['data'])
     for group in (squad_dict['data']):
         if i % 100 == 0:
             print(group)
