@@ -37,8 +37,8 @@ def augment_squad(path):
     title_batch = []
     context_batch = []
     question_batch = []
-    answer_batch = []
-    answer_batch_starts = []
+    answer_batch = {}
+    answer_batch_starts = {}
     # print(squad_dict['data'])
     for group in (squad_dict['data']):
         if i % 100 == 0:
@@ -56,8 +56,13 @@ def augment_squad(path):
                 if 'qas' in paragraph:
                     for qa in paragraph['qas']:
                         question_batch += [qa['question']]
-                        answer_batch_starts += [qa['answers']['answer_start']]
-                        answer_batch += [qa['answers']['text']]
+                        for answer in qa['answers']:
+                            if qa['question'] not in answer_batch_starts:
+                                answer_batch_starts[qa['question']] = []
+                            if qa['question'] not in answer_batch:
+                                answer_batch[qa['question']] = []
+                            answer_batch_starts[qa['question']] += [answer['answer_start']]
+                            answer_batch[qa['question']] += [answer['text']]
                         # bt_para['qas']['question'] = translate(qa['question'])
                         #  bt_para['qas']['id'] = i
                         # i += 1
@@ -80,7 +85,10 @@ def augment_squad(path):
         bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
         bt_para['context'] = context_batch[i]
         bt_para['qas']['question'] = question_batch[i]
-        bt_para['qas']['answer'] = [{'answer_start': answer_batch_starts[i], 'text': answer_batch[i]}]
+        bt_para['qas']['answer'] = []
+        for question in answer_batch.keys():
+            for j in range(len(answer_batch[question])):
+                bt_para['qas']['answer'] += [{'answer_start': answer_batch_starts[question][j], 'text': answer_batch[question][j]}]
         backtranslated['paragraphs'] += [bt_para]
         new_squad_data.append(backtranslated)
     return new_squad_data
