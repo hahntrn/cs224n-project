@@ -91,6 +91,7 @@ def augment_squad(path):
     counter = 0
     for i in range(len(titles)):
         backtranslated = {}
+        backtranslated['paragraphs'] = []
         backtranslated['title'] = titles[i]
         bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
         bt_para['context'] = contexts[i]
