@@ -39,20 +39,25 @@ def augment_squad(path):
     question_batch = []
     for group in ((squad_dict['data'])):
         backtranslated = {}
-        backtranslated['title'] = translate(group['title'])
-        title_batch += [group['title']]
+        # backtranslated['title'] = translate(group['title'])
+        # print(group.keys())
+        print(i)
+        if 'title' in group:
+            title_batch += group['title']
         backtranslated['paragraphs'] = []
-        for paragraph in group['paragraphs']:
-            bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
-            # bt_para['context'] = translate(paragraph['context'])
-            context_batch += [paragraph['context']]
-            for qa in paragraph['qas']:
-                question_batch += [qa['question']]
-                # bt_para['qas']['question'] = translate(qa['question'])
-                #  bt_para['qas']['id'] = i
-                i += 1
-            # backtranslated['paragraphs'] += [bt_para]
-        # print(backtranslated)
+        if 'paragraphs' in group:
+            for paragraph in group['paragraphs']:
+                bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
+                # bt_para['context'] = translate(paragraph['context'])
+                context_batch += [paragraph['context']]
+                if 'qas' in paragraph:
+                    for qa in paragraph['qas']:
+                        question_batch += [qa['question']]
+                        # bt_para['qas']['question'] = translate(qa['question'])
+                        #  bt_para['qas']['id'] = i
+                        i += 1
+                # backtranslated['paragraphs'] += [bt_para]
+            # print(backtranslated)
         new_squad_data['data'].append(backtranslated)
     translate(title_batch)
     print("title done!")
