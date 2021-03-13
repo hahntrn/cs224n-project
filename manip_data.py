@@ -48,7 +48,7 @@ def augment_squad(path):
         if 'title' in group:
             title_batch += [group['title']]
         backtranslated['paragraphs'] = []
-        if 'paragraphs' in group and len(paragraphs) > 0:
+        if 'paragraphs' in group and len(group['paragraphs']) > 0:
             for paragraph in group['paragraphs']:
                 bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
                 # bt_para['context'] = translate(paragraph['context'])
