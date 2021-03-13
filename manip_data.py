@@ -39,6 +39,7 @@ def augment_squad(path):
     question_batch = []
     answer_batch = {}
     answer_batch_starts = {}
+    raw_answers = []
     # print(squad_dict['data'])
     for group in (squad_dict['data']):
         if i % 100 == 0:
@@ -63,6 +64,7 @@ def augment_squad(path):
                                 answer_batch[qa['question']] = []
                             answer_batch_starts[qa['question']] += [answer['answer_start']]
                             answer_batch[qa['question']] += [answer['text']]
+                            raw_answers += [answer['text']]
                         # bt_para['qas']['question'] = translate(qa['question'])
                         #  bt_para['qas']['id'] = i
                         # i += 1
@@ -84,7 +86,7 @@ def augment_squad(path):
     #     a_count += len(answer_batch[key])
     print(context_batch)
     print(list(answer_batch.values()))
-    answers = translate(list(answer_batch.values()))
+    answers = translate(raw_answers)
     print("all done!")
     counter = 0
     for i in range(len(titles)):
