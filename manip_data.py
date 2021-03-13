@@ -41,7 +41,7 @@ def augment_squad(path):
         backtranslated = {}
         # backtranslated['title'] = translate(group['title'])
         # print(group.keys())
-        if (i % 100):
+        if (i % 100 == 0):
             print(i)
         if 'title' in group:
             title_batch += group['title']
