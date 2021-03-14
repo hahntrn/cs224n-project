@@ -73,56 +73,88 @@ def parse_batch(squad_dict):
     ids_batch = []          # list of lists (passages) of lists (qas) of ids
     answer_batch = []
     answer_start_batch = [] # list of lists (passages) of lists (qas) of lists (answer starts) of ints (answer start index)
-
     for group in (squad_dict['data']):
-        title_batch += [group['title']]
-        context_batch_item = [] # list of contexts strings separated by <sep>
-        # such that context_batch[i] returns list of passages assoc w/ titles[i]
+        if i % 100 == 0:
+            print(group)
+            print(len(title_batch), len(context_batch), len(question_batch))
+       
+        # print(group.keys())
+        if 'title' in group:
+            title_batch += [group['title']]
+        if 'paragraphs' in group and len(group['paragraphs']) > 0:
+            for paragraph in group['paragraphs']:
+                bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
+                # bt_para['context'] = translate(paragraph['context'])
+                context_batch += [paragraph['context']]
+                if 'qas' in paragraph:
+                    for qa in paragraph['qas']:
+                        question_batch += [qa['question']]
+                        for answer in qa['answers']:
+                            if qa['question'] not in answer_batch_starts:
+                                answer_batch_starts[qa['question']] = []
+                            if qa['question'] not in answer_batch:
+                                answer_batch[qa['question']] = []
+                            answer_batch_starts[qa['question']] += [answer['answer_start']]
+                            answer_batch[qa['question']] += [answer['text']]
+                            raw_answers += [answer['text']]
+                        # bt_para['qas']['question'] = translate(qa['question'])
+                        #  bt_para['qas']['id'] = i
+                        # i += 1
+                # backtranslated['paragraphs'] += [bt_para]
+            # print(backtranslated)
+        else:
+            break
+        i += 1
+        # print(i)
+    # for group in (squad_dict['data']):
+    #     title_batch += [group['title']]
+    #     context_batch_item = [] # list of contexts strings separated by <sep>
+    #     # such that context_batch[i] returns list of passages assoc w/ titles[i]
         
-        question_batch_item = []
-        ids_batch_item = []      # each item in list corresponds to one context
-        answer_batch_item = []
-        answer_start_batch_item = []
-        for p_i, passage in enumerate(group['paragraphs']):
-            context_batch_item.append(passage['context'])
-            ids_batch_qa_item = [] # each item in list correponds to one qa object
-            answer_start_batch_qa_item = []
-            for q_i, qa in enumerate(passage['qas']): # id assoc w/ each qa object
-                question_batch_item.append(qa['question'])
+    #     question_batch_item = []
+    #     ids_batch_item = []      # each item in list corresponds to one context
+    #     answer_batch_item = []
+    #     answer_start_batch_item = []
+    #     for p_i, passage in enumerate(group['paragraphs']):
+    #         context_batch_item.append(passage['context'])
+    #         ids_batch_qa_item = [] # each item in list correponds to one qa object
+    #         answer_start_batch_qa_item = []
+    #         for q_i, qa in enumerate(passage['qas']): # id assoc w/ each qa object
+    #             question_batch_item.append(qa['question'])
                 
-                ids_batch_qa_item.append(qa['id'])
+    #             ids_batch_qa_item.append(qa['id'])
                 
-                # want answer_batch to be a string: 
-                # answer text sep  <***>  if they are dif answers, all belong to same question (qa object)
-                # separated by  <**>  if they are dif qa objects, same context
-                # separated by  <*>  if they are dif contexts
-                answer_start_batch_ans_item = [] # each item in list corresponds to one answer in the current qa object
-                for a_i,answer in enumerate(qa['answers']):
-                    answer_batch_item.append(answer['text'])
-                    answer_start_batch_ans_item.append(answer['answer_start'])
-                    # if a_i != len(qa['answers'])-1: # don't append separator tokens at the end if this is the last item
-                    #     answer_batch_item.append(' <***> ')
+    #             # want answer_batch to be a string: 
+    #             # answer text sep  <***>  if they are dif answers, all belong to same question (qa object)
+    #             # separated by  <**>  if they are dif qa objects, same context
+    #             # separated by  <*>  if they are dif contexts
+    #             answer_start_batch_ans_item = [] # each item in list corresponds to one answer in the current qa object
+    #             for a_i,answer in enumerate(qa['answers']):
+    #                 answer_batch_item.append(answer['text'])
+    #                 answer_start_batch_ans_item.append(answer['answer_start'])
+    #                 # if a_i != len(qa['answers'])-1: # don't append separator tokens at the end if this is the last item
+    #                 #     answer_batch_item.append(' <***> ')
 
-                ids_batch_item.append(ids_batch_qa_item)
-                answer_start_batch_qa_item.append(answer_start_batch_ans_item)
-                # if q_i != len(passage['qas'])-1:    # don't append separator tokens at the end if this is the last item
-                #     question_batch_item.append(' <**> ')
-                #     answer_batch_item.append(' <**> ')
+    #             ids_batch_item.append(ids_batch_qa_item)
+    #             answer_start_batch_qa_item.append(answer_start_batch_ans_item)
+    #             # if q_i != len(passage['qas'])-1:    # don't append separator tokens at the end if this is the last item
+    #             #     question_batch_item.append(' <**> ')
+    #             #     answer_batch_item.append(' <**> ')
             
-            ids_batch.append(ids_batch_item)
-            answer_start_batch_item.append(answer_start_batch_qa_item)
-            # if p_i != len(group['paragraphs'])-1:   # don't append separator tokens at the end if this is the last item
-            #     context_batch_item.append(' <*> ')
-            #     question_batch_item.append(' <*> ')
-            #     answer_batch_item.append(' <*> ')
+    #         ids_batch.append(ids_batch_item)
+    #         answer_start_batch_item.append(answer_start_batch_qa_item)
+    #         # if p_i != len(group['paragraphs'])-1:   # don't append separator tokens at the end if this is the last item
+    #         #     context_batch_item.append(' <*> ')
+    #         #     question_batch_item.append(' <*> ')
+    #         #     answer_batch_item.append(' <*> ')
             
-        context_batch.append(''.join(context_batch_item))
-        question_batch.append(''.join(question_batch_item))
-        answer_batch.append(''.join(answer_batch_item))
-        answer_start_batch.append(answer_start_batch_item)
+    #     context_batch.append(''.join(context_batch_item))
+    #     question_batch.append(''.join(question_batch_item))
+    #     answer_batch.append(''.join(answer_batch_item))
+    #     answer_start_batch.append(answer_start_batch_item)
 
-    print("\ntitle_batch:\n",title_batch, "\ncontext_batch:\n",context_batch, "\nquestion_batch:\n",question_batch, "\nids_batch:\n",ids_batch, "\nanswer_batch:\n",answer_batch,"\nanswer_start_batch:\n",answer_start_batch)
-    print(len(context_batch))
+    # print("\ntitle_batch:\n",title_batch, "\ncontext_batch:\n",context_batch, "\nquestion_batch:\n",question_batch, "\nids_batch:\n",ids_batch, "\nanswer_batch:\n",answer_batch,"\nanswer_start_batch:\n",answer_start_batch)
+    # print(len(context_batch))
     return title_batch, context_batch, question_batch, ids_batch, answer_batch, answer_start_batch
 
 def augment_squad(path):
