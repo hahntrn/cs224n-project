@@ -159,7 +159,7 @@ def augment_squad(path):
     with open(path, 'rb') as f:
         squad_dict = json.load(f)
     title_batch, context_batch, question_batch, ids_batch, answer_batch, answer_start_batch = parse_batch(squad_dict)
-
+    print("starting...")
     title_map = translate(title_batch)
     print("title done translating!")
     context_map = translate(context_batch)
