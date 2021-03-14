@@ -199,6 +199,8 @@ def augment_squad(path):
                     bt_qas += [qa_dict]
                 paragraph_dict['qas'] = bt_qas
                 bt_passages += [paragraph_dict]
+            else:
+                break
         bt_group['paragraphs'] = [bt_passages]
         new_squad_data['data'].append(bt_group)
     # for g_i in range(len(titles)):
