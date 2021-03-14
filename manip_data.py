@@ -159,7 +159,7 @@ def augment_squad(path):
         squad_dict = json.load(f)
 
     title_batch, context_batch, question_batch, ids_batch, answer_batch, answer_start_batch = parse_batch(squad_dict)
-    
+
     title_map = translate(title_batch)
     print("title done translating!")
     context_map = translate(context_batch)
@@ -187,7 +187,7 @@ def augment_squad(path):
                 question = qa['question']
                 qa_dict['question'] = question_map[question]
                 qa_dict['id'] = q_id
-                i += 1
+                q_id += 1
                 answers = []
                 for answer in  qa['answers']:
                     answer_dict = {}
