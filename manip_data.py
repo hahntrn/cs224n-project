@@ -177,7 +177,7 @@ def augment_squad(path):
         main_group = {}
         bt_group['title'] = group['title']
         bt_passages = []
-        if "paragraphs" not in group:
+        if "paragraphs" not in group or if len(group['paragraphs']) == 0:
             break
         for passage in group['paragraphs']: # error here, list indices must be integers, not str: passage is list
             print(q_id)
