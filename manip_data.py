@@ -178,25 +178,26 @@ def augment_squad(path):
         bt_group['title'] = group['title']
         bt_passages = []
         for passage in group['paragraphs']: # error here, list indices must be integers, not str: passage is list
-            context = passage['context']
-            paragraph_dict = {}
-            paragraph_dict['context'] = context_map[context]
-            bt_qas = []
-            for qa in passage['qas']:
-                qa_dict = {}
-                question = qa['question']
-                qa_dict['question'] = question_map[question]
-                qa_dict['id'] = q_id
-                q_id += 1
-                answers = []
-                for answer in  qa['answers']:
-                    answer_dict = {}
-                    answer_dict['answer_start'] = answer['answer_start']
-                    answer_dict['text'] = answer_map[answer['text']]
-                    answers += [answer_dict]
-                bt_qas += [qa_dict]
-            paragraph_dict['qas'] = bt_qas
-            bt_passages += [paragraph_dict]
+            if 'context' in passage:
+                context = passage['context']
+                paragraph_dict = {}
+                paragraph_dict['context'] = context_map[context]
+                bt_qas = []
+                for qa in passage['qas']:
+                    qa_dict = {}
+                    question = qa['question']
+                    qa_dict['question'] = question_map[question]
+                    qa_dict['id'] = q_id
+                    q_id += 1
+                    answers = []
+                    for answer in  qa['answers']:
+                        answer_dict = {}
+                        answer_dict['answer_start'] = answer['answer_start']
+                        answer_dict['text'] = answer_map[answer['text']]
+                        answers += [answer_dict]
+                    bt_qas += [qa_dict]
+                paragraph_dict['qas'] = bt_qas
+                bt_passages += [paragraph_dict]
         bt_group['paragraphs'] = [bt_passages]
         new_squad_data['data'].append(bt_group)
     # for g_i in range(len(titles)):
