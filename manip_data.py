@@ -15,17 +15,17 @@ def translate(sample_texts):
     backward_mname = f'Helsinki-NLP/opus-mt-{trg}-{src}'
 
     SPECIAL_TOKENS = [' <*> ',' <**> ',' <***> ']
-    forward_tokenizer = MarianTokenizer.from_pretrained(forward_mname)
-    foward_model = MarianMTModel.from_pretrained(forward_mname)
-    backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname)
-    backward_model = MarianMTModel.from_pretrained(backward_mname)
-    translated = foward_model.generate(**forward_tokenizer.prepare_seq2seq_batch(sample_texts, return_tensors="pt"))
-    tgt_text = [forward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
-    back_translated = backward_model.generate(**backward_tokenizer.prepare_seq2seq_batch(tgt_text, return_tensors="pt"))
-    output = [backward_tokenizer.decode(t, skip_special_tokens=True) for t in back_translated]
+    # forward_tokenizer = MarianTokenizer.from_pretrained(forward_mname)
+    # foward_model = MarianMTModel.from_pretrained(forward_mname)
+    # backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname)
+    # backward_model = MarianMTModel.from_pretrained(backward_mname)
+    # translated = foward_model.generate(**forward_tokenizer.prepare_seq2seq_batch(sample_texts, return_tensors="pt"))
+    # tgt_text = [forward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
+    # back_translated = backward_model.generate(**backward_tokenizer.prepare_seq2seq_batch(tgt_text, return_tensors="pt"))
+    # output = [backward_tokenizer.decode(t, skip_special_tokens=True) for t in back_translated]
     bt_map = {}
     for i in range(len(sample_texts)):
-        bt_map[sample_texts[i]] = output[i]
+        bt_map[sample_texts[i]] = sample_texts[i]
     return bt_map
 
 def read_squad(path):
@@ -159,7 +159,7 @@ def augment_squad(path):
         squad_dict = json.load(f)
 
     title_batch, context_batch, question_batch, ids_batch, answer_batch, answer_start_batch = parse_batch(squad_dict)
-
+    
     title_map = translate(title_batch)
     print("title done translating!")
     context_map = translate(context_batch)
@@ -170,7 +170,7 @@ def augment_squad(path):
     print("all done translating!")
 
     # reconstruct_backtranslated_data
-    new_squad_data = squad_data
+    new_squad_data = squad_dict
     q_id = 0
     for group in squad_dict['data']:
         bt_group = {}
