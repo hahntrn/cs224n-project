@@ -190,11 +190,12 @@ def augment_squad(path):
                     qa_dict['id'] = q_id
                     q_id += 1
                     answers = []
-                    for answer in  qa['answers']:
+                    for answer in qa['answers']:
                         answer_dict = {}
                         answer_dict['answer_start'] = answer['answer_start']
                         answer_dict['text'] = answer_map[answer['text']]
                         answers += [answer_dict]
+                    qa_dict['answers'] = answers
                     bt_qas += [qa_dict]
                 paragraph_dict['qas'] = bt_qas
                 bt_passages += [paragraph_dict]
