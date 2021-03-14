@@ -14,10 +14,10 @@ def translate(sample_texts):
     forward_mname = f'Helsinki-NLP/opus-mt-{src}-{trg}'
     backward_mname = f'Helsinki-NLP/opus-mt-{trg}-{src}'
 
-    SPECIAL_TOKENS = ['<cxt>','<qas>','<ans>']
-    forward_tokenizer = MarianTokenizer.from_pretrained(forward_mname, additional_special_tokens=SPECIAL_TOKENS)
+    SPECIAL_TOKENS = [' <*> ',' <**> ',' <***> ']
+    forward_tokenizer = MarianTokenizer.from_pretrained(forward_mname) #, additional_special_tokens=SPECIAL_TOKENS)
     foward_model = MarianMTModel.from_pretrained(forward_mname)
-    backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname, additional_special_tokens=SPECIAL_TOKENS)
+    backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname) # , additional_special_tokens=SPECIAL_TOKENS)
     backward_model = MarianMTModel.from_pretrained(backward_mname)
 
     translated = foward_model.generate(**forward_tokenizer.prepare_seq2seq_batch(sample_texts, return_tensors="pt"))
@@ -92,28 +92,28 @@ def parse_batch(squad_dict):
                 ids_batch_qa_item.append(qa['id'])
                 
                 # want answer_batch to be a string: 
-                # answer text sep <ans> if they are dif answers, all belong to same question (qa object)
-                # separated by <qas> if they are dif qa objects, same context
-                # separated by <cxt> if they are dif contexts
+                # answer text sep  <***>  if they are dif answers, all belong to same question (qa object)
+                # separated by  <**>  if they are dif qa objects, same context
+                # separated by  <*>  if they are dif contexts
                 answer_start_batch_ans_item = [] # each item in list corresponds to one answer in the current qa object
                 for a_i,answer in enumerate(qa['answers']):
                     answer_batch_item.append(answer['text'])
                     answer_start_batch_ans_item.append(answer['answer_start'])
                     if a_i != len(qa['answers'])-1: # don't append separator tokens at the end if this is the last item
-                        answer_batch_item.append('<ans>')
+                        answer_batch_item.append(' <***> ')
 
                 ids_batch_item.append(ids_batch_qa_item)
                 answer_start_batch_qa_item.append(answer_start_batch_ans_item)
                 if q_i != len(passage['qas'])-1:    # don't append separator tokens at the end if this is the last item
-                    question_batch_item.append('<qas>')
-                    answer_batch_item.append('<qas>')
+                    question_batch_item.append(' <**> ')
+                    answer_batch_item.append(' <**> ')
             
             ids_batch.append(ids_batch_item)
             answer_start_batch_item.append(answer_start_batch_qa_item)
             if p_i != len(group['paragraphs'])-1:   # don't append separator tokens at the end if this is the last item
-                context_batch_item.append('<cxt>')
-                question_batch_item.append('<cxt>')
-                answer_batch_item.append('<cxt>')
+                context_batch_item.append(' <*> ')
+                question_batch_item.append(' <*> ')
+                answer_batch_item.append(' <*> ')
             
         context_batch.append(''.join(context_batch_item))
         question_batch.append(''.join(question_batch_item))
@@ -148,9 +148,9 @@ def augment_squad(path):
         bt_group['title'] = titles[g_i]
         bt_group['paragraphs'] = []
 
-        contexts_by_cxt = contexts[g_i].split('<cxt>')
-        questions_by_cxt = questions[g_i].split('<cxt>')
-        answers_by_cxt = answers[g_i].split('<cxt>')
+        contexts_by_cxt = contexts[g_i].split(' <*> ')
+        questions_by_cxt = questions[g_i].split(' <*> ')
+        answers_by_cxt = answers[g_i].split(' <*> ')
         # print("answer_start_batch[g_i]",len(answer_start_batch[g_i]))
 
         for p_i in range(len(contexts_by_cxt)):
@@ -158,8 +158,8 @@ def augment_squad(path):
             bt_passage['context'] = contexts_by_cxt[p_i]
             bt_passage['qas'] = []
 
-            questions_by_qas = questions_by_cxt[p_i].split('<qas>')
-            answers_by_qas = answers_by_cxt[p_i].split('<qas>')
+            questions_by_qas = questions_by_cxt[p_i].split(' <**> ')
+            answers_by_qas = answers_by_cxt[p_i].split(' <**> ')
             # print("answer_start_batch[g_i][p_i]",len(answer_start_batch[g_i][p_i]))
 
             for q_i in range(len(questions_by_qas)):
@@ -168,7 +168,7 @@ def augment_squad(path):
                 bt_qa['id'] = ids_batch[g_i][p_i][q_i]
                 bt_qa['answers'] = []
 
-                answers_by_ans = answers_by_qas[q_i].split('<ans>')
+                answers_by_ans = answers_by_qas[q_i].split(' <***> ')
                 # print("answer_start_batch[g_i][p_i][q_i]",len(answer_start_batch[g_i][p_i][q_i]))
                 for a_i in range(len(answers_by_ans)):
                     bt_ans = {}
