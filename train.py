@@ -559,6 +559,9 @@ def main():
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
         val_dataset, val_dict = get_dataset(args, args.val_datasets, args.val_dir, tokenizer, 'val')
+
+        if args.augment:
+            args.finetune_datasets = 'duorc_augmented,race_augmented,relation_extraction_augmented'
         train_dataset, _ = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'train',
                                 augment_size=len(val_dataset),
                                 augment_datasets=args.train_datasets,
