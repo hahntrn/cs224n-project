@@ -429,7 +429,10 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
     dataset_name=''
     for dataset in datasets:
         dataset_name += f'_{dataset}'
-        dataset_dict_curr = util.read_squad(f'{data_dir}/{dataset}') # error here
+        if args.do_finetune_augmented:
+            dataset_dict_curr = util.read_squad_augmented(f'{data_dir}/{dataset}')
+        else:
+            dataset_dict_curr = util.read_squad(f'{data_dir}/{dataset}') # error here
         dataset_dict = util.merge(dataset_dict, dataset_dict_curr)
 
     augment_dataset_dicts = None
@@ -437,7 +440,10 @@ def get_dataset(args, datasets, data_dir, tokenizer, split_name, augment_size=0,
         augment_dataset_dicts = []
         for aug_dataset in augment_datasets.split(','):
             # dataset_name += f'_{aug_dataset}'
-            augment_dataset_dict_curr = util.read_squad(f'{augment_data_dir}/{aug_dataset}')
+            if args.do_finetune_augmented:
+                augment_dataset_dict_curr = util.read_squad_augmented(f'{augment_data_dir}/{aug_dataset}')
+            else:
+                augment_dataset_dict_curr = util.read_squad(f'{augment_data_dir}/{aug_dataset}')
             # print("augment_dataset_dict_curr in ", augment_dataset_dict_curr)
             augment_dataset_dicts += [augment_dataset_dict_curr]
         # print("augment_dataset_dicts in get_dataset", augment_dataset_dicts) #D
