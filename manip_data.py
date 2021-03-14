@@ -15,17 +15,18 @@ def translate(sample_texts):
     backward_mname = f'Helsinki-NLP/opus-mt-{trg}-{src}'
 
     SPECIAL_TOKENS = [' <*> ',' <**> ',' <***> ']
-    forward_tokenizer = MarianTokenizer.from_pretrained(forward_mname)#, additional_special_tokens=SPECIAL_TOKENS)
+    forward_tokenizer = MarianTokenizer.from_pretrained(forward_mname)
     foward_model = MarianMTModel.from_pretrained(forward_mname)
-    backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname)#, additional_special_tokens=SPECIAL_TOKENS)
+    backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname)
     backward_model = MarianMTModel.from_pretrained(backward_mname)
-    print(sample_texts)
     translated = foward_model.generate(**forward_tokenizer.prepare_seq2seq_batch(sample_texts, return_tensors="pt"))
     tgt_text = [forward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
     back_translated = backward_model.generate(**backward_tokenizer.prepare_seq2seq_batch(tgt_text, return_tensors="pt"))
     output = [backward_tokenizer.decode(t, skip_special_tokens=True) for t in back_translated]
-    print(output)
-    return output
+    bt_map = {}
+    for i in range(len(sample_texts)):
+        bt_map[sample_texts[i]] = output[i]
+    return bt_map
 
 def read_squad(path):
     path = Path(path)
@@ -99,21 +100,21 @@ def parse_batch(squad_dict):
                 for a_i,answer in enumerate(qa['answers']):
                     answer_batch_item.append(answer['text'])
                     answer_start_batch_ans_item.append(answer['answer_start'])
-                    if a_i != len(qa['answers'])-1: # don't append separator tokens at the end if this is the last item
-                        answer_batch_item.append(' <***> ')
+                    # if a_i != len(qa['answers'])-1: # don't append separator tokens at the end if this is the last item
+                    #     answer_batch_item.append(' <***> ')
 
                 ids_batch_item.append(ids_batch_qa_item)
                 answer_start_batch_qa_item.append(answer_start_batch_ans_item)
-                if q_i != len(passage['qas'])-1:    # don't append separator tokens at the end if this is the last item
-                    question_batch_item.append(' <**> ')
-                    answer_batch_item.append(' <**> ')
+                # if q_i != len(passage['qas'])-1:    # don't append separator tokens at the end if this is the last item
+                #     question_batch_item.append(' <**> ')
+                #     answer_batch_item.append(' <**> ')
             
             ids_batch.append(ids_batch_item)
             answer_start_batch_item.append(answer_start_batch_qa_item)
-            if p_i != len(group['paragraphs'])-1:   # don't append separator tokens at the end if this is the last item
-                context_batch_item.append(' <*> ')
-                question_batch_item.append(' <*> ')
-                answer_batch_item.append(' <*> ')
+            # if p_i != len(group['paragraphs'])-1:   # don't append separator tokens at the end if this is the last item
+            #     context_batch_item.append(' <*> ')
+            #     question_batch_item.append(' <*> ')
+            #     answer_batch_item.append(' <*> ')
             
         context_batch.append(''.join(context_batch_item))
         question_batch.append(''.join(question_batch_item))
@@ -132,56 +133,83 @@ def augment_squad(path):
 
     title_batch, context_batch, question_batch, ids_batch, answer_batch, answer_start_batch = parse_batch(squad_dict)
 
-    titles = translate(title_batch)
+    title_map = translate(title_batch)
     print("title done translating!")
-    contexts = translate(context_batch)
+    context_map = translate(context_batch)
     print("contexts done translating!")
-    questions = translate(question_batch)
+    question_map = translate(question_batch)
     print("questions done translating!")
-    answers = translate(answer_batch)
+    answer_map = translate(answer_batch)
     print("all done translating!")
 
     # reconstruct_backtranslated_data
-    new_squad_data = { 'data':[] }
-    for g_i in range(len(titles)):
+    new_squad_data = squad_data
+    q_id = 0
+    for group in squad_dict['data']:
         bt_group = {}
-        bt_group['title'] = titles[g_i]
-        bt_group['paragraphs'] = []
-
-        contexts_by_cxt = contexts[g_i].split(' <*> ')
-        questions_by_cxt = questions[g_i].split(' <*> ')
-        answers_by_cxt = answers[g_i].split(' <*> ')
-        print("answer_start_batch[g_i]",len(answer_start_batch[g_i]))
-
-        for p_i in range(len(contexts_by_cxt)):
-            bt_passage = {}
-            bt_passage['context'] = contexts_by_cxt[p_i]
-            bt_passage['qas'] = []
-
-            questions_by_qas = questions_by_cxt[p_i].split(' <**> ')
-            answers_by_qas = answers_by_cxt[p_i].split(' <**> ')
-            print("answer_start_batch[g_i][p_i]",len(answer_start_batch[g_i][p_i]))
-
-            for q_i in range(len(questions_by_qas)):
-                bt_qa = {}
-                bt_qa['question'] = questions_by_qas[q_i]
-                bt_qa['id'] = ids_batch[g_i][p_i][q_i]
-                bt_qa['answers'] = []
-
-                answers_by_ans = answers_by_qas[q_i].split(' <***> ')
-                print("answers_by_qas[q_i]",answers_by_qas[q_i])
-                print("answers_by_ans",answers_by_ans)
-                print("answer_start_batch[g_i][p_i][q_i]",len(answer_start_batch[g_i][p_i][q_i]))
-                for a_i in range(len(answers_by_ans)):
-                    print('a_i',a_i)
-                    bt_ans = {}
-                    bt_ans['answer_start'] = answer_start_batch[g_i][p_i][q_i][a_i]
-                    bt_ans['text'] = answers_by_ans[a_i]
-
-                    bt_qa['answers'].append(bt_ans)
-                bt_passage['qas'].append(bt_qa)
-            bt_group['paragraphs'].append(bt_passage)
+        main_group = {}
+        bt_group['title'] = group['title']
+        bt_passages = []
+        for passage in group['paragraphs']: # error here, list indices must be integers, not str: passage is list
+            context = passage['context']
+            paragraph_dict = {}
+            paragraph_dict['context'] = context_map[context]
+            bt_qas = []
+            for qa in passage['qas']:
+                qa_dict = {}
+                question = qa['question']
+                qa_dict['question'] = question_map[question]
+                qa_dict['id'] = q_id
+                i += 1
+                answers = []
+                for answer in  qa['answers']:
+                    answer_dict = {}
+                    answer_dict['answer_start'] = answer['answer_start']
+                    answer_dict['text'] = answer_map[answer['text']]
+                    answers += [answer_dict]
+                bt_qas += [qa_dict]
+            paragraph_dict['qas'] = bt_qas
+            bt_passages += [paragraph_dict]
+        bt_group['paragraphs'] += [bt_passages]
         new_squad_data['data'].append(bt_group)
+    # for g_i in range(len(titles)):
+    #     bt_group = {}
+    #     bt_group['title'] = titles[g_i]
+    #     bt_group['paragraphs'] = []
+
+    #     contexts_by_cxt = contexts[g_i].split(' <*> ')
+    #     questions_by_cxt = questions[g_i].split(' <*> ')
+    #     answers_by_cxt = answers[g_i].split(' <*> ')
+    #     print("answer_start_batch[g_i]",len(answer_start_batch[g_i]))
+
+    #     for p_i in range(len(contexts_by_cxt)):
+    #         bt_passage = {}
+    #         bt_passage['context'] = contexts_by_cxt[p_i]
+    #         bt_passage['qas'] = []
+
+    #         questions_by_qas = questions_by_cxt[p_i].split(' <**> ')
+    #         answers_by_qas = answers_by_cxt[p_i].split(' <**> ')
+    #         print("answer_start_batch[g_i][p_i]",len(answer_start_batch[g_i][p_i]))
+
+    #         for q_i in range(len(questions_by_qas)):
+    #             bt_qa = {}
+    #             bt_qa['question'] = questions_by_qas[q_i]
+    #             bt_qa['id'] = ids_batch[g_i][p_i][q_i]
+    #             bt_qa['answers'] = []
+
+    #             answers_by_ans = answers_by_qas[q_i].split(' <***> ')
+    #             print("answers_by_qas[q_i]",answers_by_qas[q_i])
+    #             print("answers_by_ans",answers_by_ans)
+    #             print("answer_start_batch[g_i][p_i][q_i]",len(answer_start_batch[g_i][p_i][q_i]))
+    #             for a_i in range(len(answers_by_ans)):
+    #                 print('a_i',a_i)
+    #                 bt_ans = {}
+    #                 bt_ans['answer_start'] = answer_start_batch[g_i][p_i][q_i][a_i]
+    #                 bt_ans['text'] = answers_by_ans[a_i]
+
+    #                 bt_qa['answers'].append(bt_ans)
+    #             bt_passage['qas'].append(bt_qa)
+    #         bt_group['paragraphs'].append(bt_passage)
     return new_squad_data
 
 ###############################################################################
