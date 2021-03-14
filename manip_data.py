@@ -172,11 +172,12 @@ def augment_squad(path):
     # reconstruct_backtranslated_data
     new_squad_data = squad_dict
     q_id = 0
-    for group in squad_dict['data']:
+    for group in (squad_dict['data']):
         bt_group = {}
         main_group = {}
         bt_group['title'] = group['title']
         bt_passages = []
+        print(group)
         if "paragraphs" not in group or len(group['paragraphs']) == 0:
             break
         for passage in group['paragraphs']: # error here, list indices must be integers, not str: passage is list
