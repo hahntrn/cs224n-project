@@ -15,9 +15,9 @@ def translate(sample_texts):
     backward_mname = f'Helsinki-NLP/opus-mt-{trg}-{src}'
 
     SPECIAL_TOKENS = [' <*> ',' <**> ',' <***> ']
-    forward_tokenizer = MarianTokenizer.from_pretrained(forward_mname, additional_special_tokens=SPECIAL_TOKENS)
+    forward_tokenizer = MarianTokenizer.from_pretrained(forward_mname)#, additional_special_tokens=SPECIAL_TOKENS)
     foward_model = MarianMTModel.from_pretrained(forward_mname)
-    backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname, additional_special_tokens=SPECIAL_TOKENS)
+    backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname)#, additional_special_tokens=SPECIAL_TOKENS)
     backward_model = MarianMTModel.from_pretrained(backward_mname)
     print(sample_texts)
     translated = foward_model.generate(**forward_tokenizer.prepare_seq2seq_batch(sample_texts, return_tensors="pt"))
