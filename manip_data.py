@@ -14,9 +14,10 @@ def translate(sample_texts):
     forward_mname = f'Helsinki-NLP/opus-mt-{src}-{trg}'
     backward_mname = f'Helsinki-NLP/opus-mt-{trg}-{src}'
 
-    forward_tokenizer = MarianTokenizer.from_pretrained(forward_mname)
+    SPECIAL_TOKENS = ['<cxt>','<qas>','<ans>']
+    forward_tokenizer = MarianTokenizer.from_pretrained(forward_mname, additional_special_tokens=SPECIAL_TOKENS)
     foward_model = MarianMTModel.from_pretrained(forward_mname)
-    backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname)
+    backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname, additional_special_tokens=SPECIAL_TOKENS)
     backward_model = MarianMTModel.from_pretrained(backward_mname)
 
     translated = foward_model.generate(**forward_tokenizer.prepare_seq2seq_batch(sample_texts, return_tensors="pt"))
@@ -26,84 +27,239 @@ def translate(sample_texts):
     print(output)
     return output
 
+def read_squad(path):
+    path = Path(path)
+    with open(path, 'rb') as f:
+        squad_dict = json.load(f)
+    data_dict = {'question': [], 'context': [], 'id': [], 'answer': []}
+    for group in squad_dict['data']:
+        for passage in group['paragraphs']: # error here, list indices must be integers, not str: passage is list
+            context = passage['context']
+            for qa in passage['qas']:
+                question = qa['question']
+                if len(qa['answers']) == 0:
+                    data_dict['question'].append(question)
+                    data_dict['context'].append(context)
+                    data_dict['id'].append(qa['id'])
+                else:
+                    for answer in  qa['answers']:
+                        data_dict['question'].append(question)
+                        data_dict['context'].append(context)
+                        data_dict['id'].append(qa['id'])
+                        data_dict['answer'].append(answer)
+    id_map = ddict(list)
+    for idx, qid in enumerate(data_dict['id']):
+        id_map[qid].append(idx)
+
+    data_dict_collapsed = {'question': [], 'context': [], 'id': []}
+    if data_dict['answer']:
+        data_dict_collapsed['answer'] = []
+    for qid in id_map:
+        ex_ids = id_map[qid]
+        data_dict_collapsed['question'].append(data_dict['question'][ex_ids[0]])
+        data_dict_collapsed['context'].append(data_dict['context'][ex_ids[0]])
+        data_dict_collapsed['id'].append(qid)
+        if data_dict['answer']:
+            all_answers = [data_dict['answer'][idx] for idx in ex_ids]
+            data_dict_collapsed['answer'].append({'answer_start': [answer['answer_start'] for answer in all_answers],
+                                                  'text': [answer['text'] for answer in all_answers]})
+    return data_dict_collapsed
+
+def parse_batch(squad_dict):
+    title_batch = []        # list of strings (titles)
+    context_batch = []
+    question_batch = []
+    ids_batch = []          # list of lists (passages) of lists (qas) of ids
+    answer_batch = []
+    answer_start_batch = [] # list of lists (passages) of lists (qas) of lists (answer starts) of ints (answer start index)
+
+    for group in (squad_dict['data']):
+        title_batch += [group['title']]
+        context_batch_item = [] # list of contexts strings separated by <sep>
+        # such that context_batch[i] returns list of passages assoc w/ titles[i]
+        
+        question_batch_item = []
+        ids_batch_item = []      # each item in list corresponds to one context
+        answer_batch_item = []
+        answer_start_batch_item = []
+        for p_i, passage in enumerate(group['paragraphs']):
+            context_batch_item.append(passage['context'])
+            ids_batch_qa_item = [] # each item in list correponds to one qa object
+            answer_start_batch_qa_item = []
+            for q_i, qa in enumerate(passage['qas']): # id assoc w/ each qa object
+                question_batch_item.append(qa['question'])
+                
+                ids_batch_qa_item.append(qa['id'])
+                
+                # want answer_batch to be a string: 
+                # answer text sep <ans> if they are dif answers, all belong to same question (qa object)
+                # separated by <qas> if they are dif qa objects, same context
+                # separated by <cxt> if they are dif contexts
+                answer_start_batch_ans_item = [] # each item in list corresponds to one answer in the current qa object
+                for a_i,answer in enumerate(qa['answers']):
+                    answer_batch_item.append(answer['text'])
+                    answer_start_batch_ans_item.append(answer['answer_start'])
+                    if a_i != len(qa['answers'])-1: # don't append separator tokens at the end if this is the last item
+                        answer_batch_item.append('<ans>')
+
+                ids_batch_item.append(ids_batch_qa_item)
+                answer_start_batch_qa_item.append(answer_start_batch_ans_item)
+                if q_i != len(passage['qas'])-1:    # don't append separator tokens at the end if this is the last item
+                    question_batch_item.append('<qas>')
+                    answer_batch_item.append('<qas>')
+            
+            ids_batch.append(ids_batch_item)
+            answer_start_batch_item.append(answer_start_batch_qa_item)
+            if p_i != len(group['paragraphs'])-1:   # don't append separator tokens at the end if this is the last item
+                context_batch_item.append('<cxt>')
+                question_batch_item.append('<cxt>')
+                answer_batch_item.append('<cxt>')
+            
+        context_batch.append(''.join(context_batch_item))
+        question_batch.append(''.join(question_batch_item))
+        answer_batch.append(''.join(answer_batch_item))
+        answer_start_batch.append(answer_start_batch_item)
+
+    print("\ntitle_batch:\n",title_batch, "\ncontext_batch:\n",context_batch, "\nquestion_batch:\n",question_batch, "\nids_batch:\n",ids_batch, "\nanswer_batch:\n",answer_batch,"\nanswer_start_batch:\n",answer_start_batch)
+    print(len(context_batch))
+    return title_batch, context_batch, question_batch, ids_batch, answer_batch, answer_start_batch
+
 def augment_squad(path):
     path = Path(path)
 
     with open(path, 'rb') as f:
         squad_dict = json.load(f)
 
-    new_squad_data = squad_dict
-    i = 1000
-    title_batch = []
-    context_batch = []
-    question_batch = []
-    answer_batch = {}
-    answer_batch_starts = {}
-    raw_answers = []
-    # print(squad_dict['data'])
-    for group in (squad_dict['data']):
-        if i % 100 == 0:
-            print(group)
-            print(len(title_batch), len(context_batch), len(question_batch))
-       
-        # print(group.keys())
-        if 'title' in group:
-            title_batch += [group['title']]
-        if 'paragraphs' in group and len(group['paragraphs']) > 0:
-            for paragraph in group['paragraphs']:
-                bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
-                # bt_para['context'] = translate(paragraph['context'])
-                context_batch += [paragraph['context']]
-                if 'qas' in paragraph:
-                    for qa in paragraph['qas']:
-                        question_batch += [qa['question']]
-                        for answer in qa['answers']:
-                            if qa['question'] not in answer_batch_starts:
-                                answer_batch_starts[qa['question']] = []
-                            if qa['question'] not in answer_batch:
-                                answer_batch[qa['question']] = []
-                            answer_batch_starts[qa['question']] += [answer['answer_start']]
-                            answer_batch[qa['question']] += [answer['text']]
-                            raw_answers += [answer['text']]
-                        # bt_para['qas']['question'] = translate(qa['question'])
-                        #  bt_para['qas']['id'] = i
-                        # i += 1
-                # backtranslated['paragraphs'] += [bt_para]
-            # print(backtranslated)
-        else:
-            break
-        i += 1
-        # print(i)
+    title_batch, context_batch, question_batch, ids_batch, answer_batch, answer_start_batch = parse_batch(squad_dict)
+
     titles = translate(title_batch)
-    print("title done!")
+    print("title done translating!")
     contexts = translate(context_batch)
-    print("contexts done!")
+    print("contexts done translating!")
     questions = translate(question_batch)
-    question_to_index = {}
-    a_count = 0
-    for key in answer_batch.keys():
-        question_to_index[key] = a_count
-        a_count += len(answer_batch[key])
-    print(context_batch)
-    print(list(answer_batch.values()))
-    answers = translate(raw_answers)
-    print("all done!")
-    counter = 0
-    for i in range(len(titles)):
-        backtranslated = {}
-        backtranslated['paragraphs'] = []
-        backtranslated['title'] = titles[i]
-        bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
-        bt_para['context'] = contexts[i]
-        bt_para['qas']['question'] = questions[i]
-        bt_para['qas']['answer'] = []
-        for question in answer_batch.keys():
-            for j in range(counter, question_to_index[question]):
-                bt_para['qas']['answer'] += [{'answer_start': answer_batch_starts[question][j - counter], 'text': answers[j]}]
-                counter += 1
-        backtranslated['paragraphs'] += [bt_para]
-        new_squad_data['data'].append(backtranslated)
+    print("questions done translating!")
+    answers = translate(answer_batch)
+    print("all done translating!")
+
+    # reconstruct_backtranslated_data
+    new_squad_data = { 'data':[] }
+    for g_i in range(len(titles)):
+        bt_group = {}
+        bt_group['title'] = titles[g_i]
+        bt_group['paragraphs'] = []
+
+        contexts_by_cxt = contexts[g_i].split('<cxt>')
+        questions_by_cxt = questions[g_i].split('<cxt>')
+        answers_by_cxt = answers[g_i].split('<cxt>')
+        # print("answer_start_batch[g_i]",len(answer_start_batch[g_i]))
+
+        for p_i in range(len(contexts_by_cxt)):
+            bt_passage = {}
+            bt_passage['context'] = contexts_by_cxt[p_i]
+            bt_passage['qas'] = []
+
+            questions_by_qas = questions_by_cxt[p_i].split('<qas>')
+            answers_by_qas = answers_by_cxt[p_i].split('<qas>')
+            # print("answer_start_batch[g_i][p_i]",len(answer_start_batch[g_i][p_i]))
+
+            for q_i in range(len(questions_by_qas)):
+                bt_qa = {}
+                bt_qa['question'] = questions_by_qas[q_i]
+                bt_qa['id'] = ids_batch[g_i][p_i][q_i]
+                bt_qa['answers'] = []
+
+                answers_by_ans = answers_by_qas[q_i].split('<ans>')
+                # print("answer_start_batch[g_i][p_i][q_i]",len(answer_start_batch[g_i][p_i][q_i]))
+                for a_i in range(len(answers_by_ans)):
+                    bt_ans = {}
+                    bt_ans['answer_start'] = answer_start_batch[g_i][p_i][q_i][a_i]
+                    bt_ans['text'] = answers_by_ans[a_i]
+
+                    bt_qa['answers'].append(bt_ans)
+                bt_passage['qas'].append(bt_qa)
+            bt_group['paragraphs'].append(bt_passage)
+        new_squad_data['data'].append(bt_group)
     return new_squad_data
+
+###############################################################################
+
+    # path = Path(path)
+
+    # with open(path, 'rb') as f:
+    #     squad_dict = json.load(f)
+
+    # new_squad_data = squad_dict
+    # i = 1000
+    # title_batch = []
+    # context_batch = []
+    # question_batch = []
+    # answer_batch = {}
+    # answer_batch_starts = {}
+    # raw_answers = []
+    # # print(squad_dict['data'])
+    # for group in (squad_dict['data']):
+    #     if i % 100 == 0:
+    #         print(group)
+    #         print(len(title_batch), len(context_batch), len(question_batch))
+       
+    #     # print(group.keys())
+    #     if 'title' in group:
+    #         title_batch += [group['title']]
+    #     if 'paragraphs' in group and len(group['paragraphs']) > 0:
+    #         for paragraph in group['paragraphs']:
+    #             bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
+    #             # bt_para['context'] = translate(paragraph['context'])
+    #             context_batch += [paragraph['context']]
+    #             if 'qas' in paragraph:
+    #                 for qa in paragraph['qas']:
+    #                     question_batch += [qa['question']]
+    #                     for answer in qa['answers']:
+    #                         if qa['question'] not in answer_batch_starts:
+    #                             answer_batch_starts[qa['question']] = []
+    #                         if qa['question'] not in answer_batch:
+    #                             answer_batch[qa['question']] = []
+    #                         answer_batch_starts[qa['question']] += [answer['answer_start']]
+    #                         answer_batch[qa['question']] += [answer['text']]
+    #                         raw_answers += [answer['text']]
+    #                     # bt_para['qas']['question'] = translate(qa['question'])
+    #                     #  bt_para['qas']['id'] = i
+    #                     # i += 1
+    #             # backtranslated['paragraphs'] += [bt_para]
+    #         # print(backtranslated)
+    #     else:
+    #         break
+    #     i += 1
+    #     # print(i)
+    # titles = translate(title_batch)
+    # print("title done!")
+    # contexts = translate(context_batch)
+    # print("contexts done!")
+    # questions = translate(question_batch)
+    # question_to_index = {}
+    # a_count = 0
+    # for key in answer_batch.keys():
+    #     question_to_index[key] = a_count
+    #     a_count += len(answer_batch[key])
+    # print(context_batch)
+    # print(list(answer_batch.values()))
+    # answers = translate(raw_answers)
+    # print("all done!")
+    # counter = 0
+    # for i in range(len(titles)):
+    #     backtranslated = {}
+    #     backtranslated['paragraphs'] = []
+    #     backtranslated['title'] = titles[i]
+    #     bt_para = {'context': '', 'qas': {'question': '', 'id': '', 'answers':[]}}
+    #     bt_para['context'] = contexts[i]
+    #     bt_para['qas']['question'] = questions[i]
+    #     bt_para['qas']['answer'] = []
+    #     for question in answer_batch.keys():
+    #         for j in range(counter, question_to_index[question]):
+    #             bt_para['qas']['answer'] += [{'answer_start': answer_batch_starts[question][j - counter], 'text': answers[j]}]
+    #             counter += 1
+    #     backtranslated['paragraphs'] += [bt_para]
+    #     new_squad_data['data'].append(backtranslated)
+    # return new_squad_data
 
 def read_squad_small(path, n_splits=5, seed=1):
     random.seed(seed)
