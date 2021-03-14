@@ -221,6 +221,7 @@ def read_squad_augmented(path):
                             data_dict['context'].append(context)
                             data_dict['id'].append(qa['id'])
                             data_dict['answer'].append(answer)
+    print("escaped the for loop")
     id_map = ddict(list)
     for idx, qid in enumerate(data_dict['id']):
         id_map[qid].append(idx)
@@ -237,6 +238,7 @@ def read_squad_augmented(path):
             all_answers = [data_dict['answer'][idx] for idx in ex_ids]
             data_dict_collapsed['answer'].append({'answer_start': [answer['answer_start'] for answer in all_answers],
                                                   'text': [answer['text'] for answer in all_answers]})
+    print("done!")
     return data_dict_collapsed
 
 def read_squad(path):
