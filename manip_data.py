@@ -91,9 +91,7 @@ def parse_batch(squad_dict):
                     for qa in paragraph['qas']:
                         question_batch += [qa['question']]
                         for answer in qa['answers']:
-                            if qa['question'] not in answer_batch:
-                                answer_batch[qa['question']] = []
-                            answer_batch[qa['question']] += [answer['text']]
+                            answer_batch += [answer['text']]
                         # bt_para['qas']['question'] = translate(qa['question'])
                         #  bt_para['qas']['id'] = i
                         # i += 1
