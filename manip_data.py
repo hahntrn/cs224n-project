@@ -19,7 +19,7 @@ def translate(sample_texts):
     foward_model = MarianMTModel.from_pretrained(forward_mname)
     backward_tokenizer = MarianTokenizer.from_pretrained(backward_mname, additional_special_tokens=SPECIAL_TOKENS)
     backward_model = MarianMTModel.from_pretrained(backward_mname)
-
+    print(sample_texts)
     translated = foward_model.generate(**forward_tokenizer.prepare_seq2seq_batch(sample_texts, return_tensors="pt"))
     tgt_text = [forward_tokenizer.decode(t, skip_special_tokens=True) for t in translated]
     back_translated = backward_model.generate(**backward_tokenizer.prepare_seq2seq_batch(tgt_text, return_tensors="pt"))
