@@ -73,6 +73,7 @@ def parse_batch(squad_dict):
     ids_batch = []          # list of lists (passages) of lists (qas) of ids
     answer_batch = []
     answer_start_batch = [] # list of lists (passages) of lists (qas) of lists (answer starts) of ints (answer start index)
+    i = 0
     for group in (squad_dict['data']):
         if i % 100 == 0:
             print(group)
@@ -90,13 +91,9 @@ def parse_batch(squad_dict):
                     for qa in paragraph['qas']:
                         question_batch += [qa['question']]
                         for answer in qa['answers']:
-                            if qa['question'] not in answer_batch_starts:
-                                answer_batch_starts[qa['question']] = []
                             if qa['question'] not in answer_batch:
                                 answer_batch[qa['question']] = []
-                            answer_batch_starts[qa['question']] += [answer['answer_start']]
                             answer_batch[qa['question']] += [answer['text']]
-                            raw_answers += [answer['text']]
                         # bt_para['qas']['question'] = translate(qa['question'])
                         #  bt_para['qas']['id'] = i
                         # i += 1
