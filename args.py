@@ -22,6 +22,7 @@ def get_train_test_args():
     parser.add_argument('--train-small', action='store_true')
     parser.add_argument('--val-datasets', type=str, default='squad,nat_questions,newsqa')
     parser.add_argument('--finetune-datasets', type=str, default='race,relation_extraction,duorc')
+    parser.add_argument('--finetune-datasets-augmented', type=str, default='race_augmented,relation_extraction_augmented,duorc_augmented')
     parser.add_argument('--run-name', type=str, default='multitask_distilbert')
     parser.add_argument('--recompute-features', action='store_true')
     parser.add_argument('--train-dir', type=str, default='datasets/indomain_train')
