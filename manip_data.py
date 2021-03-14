@@ -151,7 +151,7 @@ def augment_squad(path):
         contexts_by_cxt = contexts[g_i].split(' <*> ')
         questions_by_cxt = questions[g_i].split(' <*> ')
         answers_by_cxt = answers[g_i].split(' <*> ')
-        # print("answer_start_batch[g_i]",len(answer_start_batch[g_i]))
+        print("answer_start_batch[g_i]",len(answer_start_batch[g_i]))
 
         for p_i in range(len(contexts_by_cxt)):
             bt_passage = {}
@@ -160,7 +160,7 @@ def augment_squad(path):
 
             questions_by_qas = questions_by_cxt[p_i].split(' <**> ')
             answers_by_qas = answers_by_cxt[p_i].split(' <**> ')
-            # print("answer_start_batch[g_i][p_i]",len(answer_start_batch[g_i][p_i]))
+            print("answer_start_batch[g_i][p_i]",len(answer_start_batch[g_i][p_i]))
 
             for q_i in range(len(questions_by_qas)):
                 bt_qa = {}
@@ -169,8 +169,11 @@ def augment_squad(path):
                 bt_qa['answers'] = []
 
                 answers_by_ans = answers_by_qas[q_i].split(' <***> ')
-                # print("answer_start_batch[g_i][p_i][q_i]",len(answer_start_batch[g_i][p_i][q_i]))
+                print("answers_by_qas[q_i]",answers_by_qas[q_i])
+                print("answers_by_ans",answers_by_ans)
+                print("answer_start_batch[g_i][p_i][q_i]",len(answer_start_batch[g_i][p_i][q_i]))
                 for a_i in range(len(answers_by_ans)):
+                    print('a_i',a_i)
                     bt_ans = {}
                     bt_ans['answer_start'] = answer_start_batch[g_i][p_i][q_i][a_i]
                     bt_ans['text'] = answers_by_ans[a_i]
