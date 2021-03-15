@@ -600,21 +600,19 @@ def main():
         args.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(args, log)
 
+        # load saved model tuned on in-domain train set
+        checkpoint_path = os.path.join(args.load_dir, 'checkpoint')
+        model = DistilBertForQuestionAnswering.from_pretrained(checkpoint_path)
+        model.to(args.device)
+
         # TODO: sample |dev| examples from ood train to augment
 
-        val_dataset, val_dict = get_dataset(args, args.finetune_datasets, args.finetune_dir, tokenizer, 'val') # use ood train as validation set
-        # val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
+        val_dataset, val_dict = get_dataset(args, args.train_datasets, args.val_dir, tokenizer, 'val')
         # sample len(val_dataset) examples from augment_dataset train
 
         # TODO augment size wrong and unused?
         train_dataset, _ = get_dataset(args, args.train_datasets, args.train_dir, tokenizer, 'train',
-                                augment_size=len(val_dataset),
-                                augment_datasets=args.finetune_datasets_augmented,
-                                augment_data_dir=args.finetune_dir,
-                                sent_model=None) # type QADataset
-
-
-
+            augment_datasets=args.finetune_datasets_augmented, augment_data_dir=args.finetune_dir) # type QADataset
         log.info("Preparing Validation Data...")
         train_loader = DataLoader(train_dataset,
                                 batch_size=args.batch_size,
@@ -623,6 +621,7 @@ def main():
                                 batch_size=args.batch_size,
                                 sampler=SequentialSampler(val_dataset))
         best_scores = trainer.train(model, train_loader, val_loader, val_dict)
+
 
     if args.do_finetune:
         if not os.path.exists(args.save_dir):
