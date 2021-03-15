@@ -160,49 +160,59 @@ def augment_squad(path):
         squad_dict = json.load(f)
     title_batch, context_batch, question_batch, ids_batch, answer_batch, answer_start_batch = parse_batch(squad_dict)
     print("starting...")
-    title_map = translate(title_batch)
-    print("title done translating!")
-    context_map = translate(context_batch)
+    title_maps = []
+    context_maps = []
+    question_maps = []
+    answer_maps = []
+    language_codes = [("en", "fr"), ("en", "cn"), ("en", "ga")]
+    for language in language_codes:
+        title_maps += translate(title_batch, language[0], language[1])
+    for language in language_codes:
+        context_maps  += translate(context_batch, language[0], language[1])
     print("contexts done translating!")
-    question_map = translate(question_batch)
+    for language in language_codes:
+        question_maps  += translate(question_batch, language[0], language[1])
     print("questions done translating!")
-    answer_map = translate(answer_batch)
+    for language in language_codes:
+        answer_maps  += translate(answer_batch, language[0], language[1])
     print("all done translating!")
     # print(squad_dict)
     # reconstruct_backtranslated_data
     new_squad_data = copy.deepcopy(squad_dict)
     q_id = 0
     for group in (squad_dict['data']):
-        bt_group = {}
-        main_group = {}
-        bt_group['title'] = group['title']
-        bt_passages = []
-        for passage in group['paragraphs']: # error here, list indices must be integers, not str: passage is list
-            if 'context' in passage:
-                context = passage['context']
-                paragraph_dict = {}
-                paragraph_dict['context'] = context_map[context]
-                bt_qas = []
-                for qa in passage['qas']:
-                    qa_dict = {}
-                    question = qa['question']
-                    qa_dict['question'] = question_map[question]
-                    qa_dict['id'] = q_id
-                    q_id += 1
-                    answers = []
-                    for answer in qa['answers']:
-                        answer_dict = {}
-                        answer_dict['answer_start'] = answer['answer_start']
-                        answer_dict['text'] = answer_map[answer['text']]
-                        answers += [answer_dict]
-                    qa_dict['answers'] = answers
-                    bt_qas += [qa_dict]
-                paragraph_dict['qas'] = bt_qas
-                bt_passages += [paragraph_dict]
-            else:
-                break
-        bt_group['paragraphs'] = [bt_passages]
-        new_squad_data['data'].append(bt_group)
+        for i in range(language_codes):
+            bt_group = {}
+            main_group = {}
+            bt_group['title'] = title_maps[i][group['title']]
+            bt_passages = []
+            for passage in group['paragraphs']: # error here, list indices must be integers, not str: passage is list
+                if 'context' in passage:
+                    if args
+                    context = passage['context']
+                    paragraph_dict = {}
+                    paragraph_dict['context'] = context_maps[i][context]
+                    bt_qas = []
+                    for qa in passage['qas']:
+                        qa_dict = {}
+                        question = qa['question']
+                        qa_dict['question'] = question_maps[i][question]
+                        qa_dict['id'] = q_id
+                        q_id += 1
+                        answers = []
+                        for answer in qa['answers']:
+                            answer_dict = {}
+                            answer_dict['answer_start'] = answer['answer_start']
+                            answer_dict['text'] = answer_maps[i][answer['text']]
+                            answers += [answer_dict]
+                        qa_dict['answers'] = answers
+                        bt_qas += [qa_dict]
+                    paragraph_dict['qas'] = bt_qas
+                    bt_passages += [paragraph_dict]
+                else:
+                    break
+            bt_group['paragraphs'] = [bt_passages]
+            new_squad_data['data'].append(bt_group)
     # for g_i in range(len(titles)):
     #     bt_group = {}
     #     bt_group['title'] = titles[g_i]
