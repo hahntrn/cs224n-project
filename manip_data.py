@@ -162,7 +162,7 @@ def augment_squad(path):
     context_maps = []
     question_maps = []
     answer_maps = []
-    language_codes = [("en", "fr"), ("en", "cn"), ("en", "ga")]
+    language_codes = [("en", "fr"), ("en", "zh-CN"), ("en", "no")]
     for language in language_codes:
         title_maps += translate(title_batch, language[0], language[1])
     for language in language_codes:
