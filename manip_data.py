@@ -9,7 +9,6 @@ from transformers import MarianTokenizer, MarianMTModel
 from typing import List
 
 def translate(sample_texts, src, trg):
-    print(sample_texts)
     forward_mname = f'Helsinki-NLP/opus-mt-{src}-{trg}'
     backward_mname = f'Helsinki-NLP/opus-mt-{trg}-{src}'
 
@@ -75,7 +74,6 @@ def parse_batch(squad_dict):
     i = 0
     for group in (squad_dict['data']):
         if i % 100 == 0:
-            print(group)
             print(len(title_batch), len(context_batch), len(question_batch))
        
         # print(group.keys())
