@@ -188,7 +188,6 @@ def augment_squad(path):
             bt_passages = []
             for passage in group['paragraphs']: # error here, list indices must be integers, not str: passage is list
                 if 'context' in passage:
-                    if args
                     context = passage['context']
                     paragraph_dict = {}
                     paragraph_dict['context'] = context_maps[i][context]
