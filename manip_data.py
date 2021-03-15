@@ -177,7 +177,7 @@ def augment_squad(path):
     new_squad_data = copy.deepcopy(squad_dict)
     q_id = 0
     for group in (squad_dict['data']):
-        for i in range(language_codes):
+        for i in range(len(language_codes)):
             bt_group = {}
             main_group = {}
             bt_group['title'] = title_maps[i][group['title']]
