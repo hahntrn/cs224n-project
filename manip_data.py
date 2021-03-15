@@ -11,7 +11,7 @@ from typing import List
 def translate(sample_texts):
     print(sample_texts)
     src = 'en'  # source language
-    trg = 'fr'  # target language
+    trg = 'jap' # 'fr'  # target language
     forward_mname = f'Helsinki-NLP/opus-mt-{src}-{trg}'
     backward_mname = f'Helsinki-NLP/opus-mt-{trg}-{src}'
 
@@ -373,7 +373,7 @@ def translate_set(data_dir, datasets):
     for dataset in datasets:
         fp = f'{data_dir}/{dataset}'
         dataset_dict_curr = augment_squad(fp)
-        print(f'Saving {fp}_augmented')
+        print(f'Saving {fp}_augmented_jap')
         fp = f'{data_dir}/{dataset}'
         with open(f'{fp}_augmented', 'w+') as writefp:
             json.dump(dataset_dict_curr, writefp)
