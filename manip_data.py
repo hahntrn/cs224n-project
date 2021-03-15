@@ -8,10 +8,8 @@ from tqdm import tqdm
 from transformers import MarianTokenizer, MarianMTModel
 from typing import List
 
-def translate(sample_texts, language):
+def translate(sample_texts, src, trg):
     print(sample_texts)
-    src = language[0]  # source language
-    trg = language[1]  # target language
     forward_mname = f'Helsinki-NLP/opus-mt-{src}-{trg}'
     backward_mname = f'Helsinki-NLP/opus-mt-{trg}-{src}'
 
