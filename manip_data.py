@@ -162,15 +162,15 @@ def augment_squad(path):
     answer_maps = []
     language_codes = [("en", "fr"), ("en", "zh"), ("en", "nl")]
     for language in language_codes:
-        title_maps += translate(title_batch, language[0], language[1])
+        title_maps += [translate(title_batch, language[0], language[1])]
     for language in language_codes:
-        context_maps  += translate(context_batch, language[0], language[1])
+        context_maps  += [translate(context_batch, language[0], language[1])]
     print("contexts done translating!")
     for language in language_codes:
-        question_maps  += translate(question_batch, language[0], language[1])
+        question_maps  += [translate(question_batch, language[0], language[1])]
     print("questions done translating!")
     for language in language_codes:
-        answer_maps  += translate(answer_batch, language[0], language[1])
+        answer_maps  += [translate(answer_batch, language[0], language[1])]
     print("all done translating!")
     # print(squad_dict)
     # reconstruct_backtranslated_data
